@@ -18,7 +18,7 @@ VM1_USER = "ubuntu"  # Replace with the actual SSH username on VM1 (e.g., ubuntu
 # The command to run on VM1. You may need to activate a virtual environment first,
 # and specify the full path to recalculate.py.
 # Example: "cd /home/ubuntu/Resumatch && source venv/bin/activate && python recalculate.py"
-RECALCULATE_COMMAND = "cd /home/ubuntu/Resumatch_OCI && python recalculate.py"
+RECALCULATE_COMMAND = "cd /home/ubuntu/Resumatch_OCI && python3 recalculate.py"
 
 
 def main():
