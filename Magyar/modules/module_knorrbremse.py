@@ -64,7 +64,9 @@ def run_scraper():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    driver = webdriver.Chrome(options=options)
+    options.binary_location = "/usr/bin/chromium-browser"
+    _service = Service(executable_path="/usr/bin/chromedriver")
+    driver = webdriver.Chrome(service=_service, options=options)
     try:
         driver.get(BASE_URL)
         print("   ⏳ Várakozás az első kártyákra az Árnyék DOM-ban (max 20 mp)...")

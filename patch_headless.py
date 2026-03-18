@@ -1,18 +1,11 @@
 """
-Patch script: replaces undetected_chromedriver (uc) with standard Selenium Chrome
-in all scraper modules so they work correctly on ARM-based servers.
-
-Changes applied per file:
-  1. 'import undetected_chromedriver as uc'  ->  standard selenium imports
-  2. 'uc.ChromeOptions()'  ->  'Options()'
-  3. 'uc.Chrome(options=options)'  ->  'webdriver.Chrome(options=options)'
-  4. Ensures --headless=new, --no-sandbox, --disable-dev-shm-usage are present
-  5. Removes version_main=... args (not applicable to standard selenium)
-  6. Removes any broken try/except blocks left by the previous patch attempt
+Patch script v3: Explicitly sets chromium binary + chromedriver Service path for ARM Ubuntu.
+Re-run this after any previous patch runs.
 """
 
 import os
 import re
+import ast
 
 TARGET_DIRS = [
     "/Users/mac/Desktop/Programozás/Magyar-Manual-main/Magyar/modules",
@@ -25,58 +18,69 @@ NEW_IMPORTS = """from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service"""
 
+# ARM-native paths installed via: sudo apt install chromium-browser chromium-chromedriver
+CHROME_BINARY = "/usr/bin/chromium-browser"
+CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
+
+
 def patch_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    if 'undetected_chromedriver' not in content:
-        return False  # Not a uc-based scraper, skip
+    # Only process selenium-based scrapers
+    if 'webdriver' not in content and 'undetected_chromedriver' not in content:
+        return False
 
     original = content
 
-    # Step 1: Replace the uc import block
+    # 1. Swap uc import for standard selenium
     content = content.replace(OLD_IMPORT, NEW_IMPORTS)
-
-    # Step 2: Replace uc.ChromeOptions() -> Options()
     content = content.replace("uc.ChromeOptions()", "Options()")
-
-    # Step 3: Remove version_main arguments
+    content = re.sub(r'uc\.Chrome\(', 'webdriver.Chrome(', content)
     content = re.sub(r',?\s*version_main\s*=\s*\w+', '', content)
 
-    # Step 4: Replace uc.Chrome(options=options) -> webdriver.Chrome(options=options)
-    content = re.sub(r'uc\.Chrome\(', 'webdriver.Chrome(', content)
+    # 2. Strip ALL existing headless/sandbox/binary/service lines to start clean
+    strip_patterns = [
+        r'[ \t]*options\.add_argument\(["\']--headless(?:=new)?["\']\)[ \t]*\n',
+        r'[ \t]*#\s*options\.add_argument\(["\']--headless.*?\n',
+        r'[ \t]*options\.add_argument\(["\']--no-sandbox["\']\)[ \t]*\n',
+        r'[ \t]*options\.add_argument\(["\']--disable-dev-shm-usage["\']\)[ \t]*\n',
+        r'[ \t]*options\.add_argument\(["\']--disable-gpu["\']\)[ \t]*\n',
+        r'[ \t]*options\.binary_location\s*=.*\n',
+        r'[ \t]*_service\s*=\s*Service\(.*?\)\n',
+    ]
+    for pattern in strip_patterns:
+        content = re.sub(pattern, '', content)
 
-    # Step 5: Fix broken try/except blocks left by previous patch
-    # Pattern: options.add_argument("--headless=new")\n    driver = webdriver.Chrome(
-    # was accidentally wrapped in try with wrong context - clean up
+    # 3. Normalize all Chrome() calls to webdriver.Chrome(options=options)
+    content = re.sub(r'webdriver\.Chrome\([^)]*\)', 'webdriver.Chrome(options=options)', content)
+
+    # 4. Remove orphaned try/except blocks (left by previous patches)
     content = re.sub(
-        r'try:\s*\n(\s+)options\.add_argument\("--headless=new"\)\s*\n\s*driver\s*=',
-        r'\1options.add_argument("--headless=new")\n\1driver =',
-        content
+        r'[ \t]*except Exception as e:\n[ \t]+print\(f?"[^"]*\{e\}[^"]*"\)\n[ \t]+return\n',
+        '',
+        content,
+        flags=re.IGNORECASE
     )
 
-    # Step 6: Find the indented block where options are built (look for ChromeOptions context)
-    # and ensure we have the three headless-safe flags
-    # First strip any existing duplicated headless flags
-    content = re.sub(r'\s*options\.add_argument\("--headless=new"\)\s*\n', '\n', content)
-    content = re.sub(r'\s*#\s*options\.add_argument\(["\']--headless=new["\']\).*\n', '\n', content)  
-
-    # Step 7: Inject the required headless/sandbox args right before webdriver.Chrome init
-    # We look for the driver = webdriver.Chrome( line and insert before it
-    def inject_headless(m):
+    # 5. Inject the full ARM-compatible driver block before webdriver.Chrome(options=options)
+    def inject(m):
         indent = m.group(1)
         return (
             f'{indent}options.add_argument("--headless=new")\n'
             f'{indent}options.add_argument("--no-sandbox")\n'
             f'{indent}options.add_argument("--disable-dev-shm-usage")\n'
             f'{indent}options.add_argument("--disable-gpu")\n'
-            f'{indent}driver = webdriver.Chrome('
+            f'{indent}options.binary_location = "{CHROME_BINARY}"\n'
+            f'{indent}_service = Service(executable_path="{CHROMEDRIVER_PATH}")\n'
+            f'{indent}driver = webdriver.Chrome(service=_service, options=options)'
         )
-    content = re.sub(r'^(\s+)driver\s*=\s*webdriver\.Chrome\(', inject_headless, content, flags=re.MULTILINE)
-
-    # Step 8: Fix any double commas or trailing commas in Chrome() call
-    content = re.sub(r'options=options,\s*\)', 'options=options)', content)
-    content = re.sub(r'\(\s*,', '(', content)
+    content = re.sub(
+        r'^([ \t]+)driver\s*=\s*webdriver\.Chrome\(options=options\)',
+        inject,
+        content,
+        flags=re.MULTILINE
+    )
 
     if content != original:
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -92,7 +96,7 @@ if __name__ == "__main__":
 
     for directory in TARGET_DIRS:
         if not os.path.exists(directory):
-            print(f"⚠️  Directory not found: {directory}")
+            print(f"⚠️  Not found: {directory}")
             continue
         for filename in sorted(os.listdir(directory)):
             if not filename.endswith(".py"):
@@ -101,13 +105,13 @@ if __name__ == "__main__":
             try:
                 if patch_file(filepath):
                     patched += 1
-                    print(f"  ✅ Patched: {filename}")
+                    print(f"  ✅ {filename}")
                 else:
                     skipped += 1
             except Exception as e:
                 errored.append(filename)
-                print(f"  ❌ Error patching {filename}: {e}")
+                print(f"  ❌ {filename}: {e}")
 
-    print(f"\nDone. Patched: {patched}, Skipped (no uc): {skipped}, Errors: {len(errored)}")
+    print(f"\nPatched: {patched} | Skipped: {skipped} | Errors: {len(errored)}")
     if errored:
-        print("Errored files:", errored)
+        print("Errors:", errored)
