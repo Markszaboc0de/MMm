@@ -24,12 +24,12 @@ SRC_DB   = os.getenv("SRC_PG_DATABASE", "raw_db")
 SRC_USER = os.getenv("SRC_PG_USER", "postgres")
 SRC_PASS = os.getenv("SRC_PG_PASSWORD", "postgres")
 
-# TARGET Database (the main app database on VM1, or local duplicate)
-DEST_HOST = os.getenv("DEST_PG_HOST", "localhost") # Change this to VM1's IP if remote!
+# TARGET Database (the main app database on VM1)
+DEST_HOST = os.getenv("DEST_PG_HOST", "192.168.1.151")
 DEST_PORT = os.getenv("DEST_PG_PORT", "5432")
-DEST_DB   = os.getenv("DEST_PG_DATABASE", "jobs_db")
-DEST_USER = os.getenv("DEST_PG_USER", "postgres")
-DEST_PASS = os.getenv("DEST_PG_PASSWORD", "postgres")
+DEST_DB   = os.getenv("DEST_PG_DATABASE", "job_match_db")
+DEST_USER = os.getenv("DEST_PG_USER", "app_user")
+DEST_PASS = os.getenv("DEST_PG_PASSWORD", "Mindenszarhoz")
 
 # Table Names
 SRC_TABLE  = "scraped_jobs"
