@@ -26,7 +26,7 @@ SRC_USER = os.getenv("SRC_PG_USER", "postgres")
 SRC_PASS = os.getenv("SRC_PG_PASSWORD", "postgres")
 
 # TARGET Database (the main app database on VM1)
-DEST_HOST = os.getenv("DEST_PG_HOST", "192.168.1.151")
+DEST_HOST = os.getenv("DEST_PG_HOST", "10.0.0.74")
 DEST_PORT = os.getenv("DEST_PG_PORT", "5432")
 DEST_DB   = os.getenv("DEST_PG_DATABASE", "job_match_db")
 DEST_USER = os.getenv("DEST_PG_USER", "app_user")
