@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 
 MODULES_FOLDER = "modules"
@@ -30,7 +31,7 @@ def run_all_modules():
         
         try:
             # subprocess isolates each script so a crash doesn't kill the whole pipeline
-            result = subprocess.run(['python', module_path], capture_output=True, text=True)
+            result = subprocess.run([sys.executable, module_path], capture_output=True, text=True)
             
             if result.returncode == 0:
                 print(f"   ✅ Success!")
