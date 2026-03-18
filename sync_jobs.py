@@ -43,16 +43,20 @@ def sync_databases():
 
     try:
         # 1. Connect to Source
+        print(f"🔌 Connecting to Source Database ({SRC_HOST}:{SRC_PORT})...")
         src_conn = psycopg2.connect(
-            host=SRC_HOST, port=SRC_PORT, dbname=SRC_DB, user=SRC_USER, password=SRC_PASS
+            host=SRC_HOST, port=SRC_PORT, dbname=SRC_DB, user=SRC_USER, password=SRC_PASS, connect_timeout=10
         )
         src_cursor = src_conn.cursor()
+        print("✅ Connected to Source.")
 
         # 2. Connect to Destination
+        print(f"🔌 Connecting to Destination Database ({DEST_HOST}:{DEST_PORT})...")
         dest_conn = psycopg2.connect(
-            host=DEST_HOST, port=DEST_PORT, dbname=DEST_DB, user=DEST_USER, password=DEST_PASS
+            host=DEST_HOST, port=DEST_PORT, dbname=DEST_DB, user=DEST_USER, password=DEST_PASS, connect_timeout=10
         )
         dest_cursor = dest_conn.cursor()
+        print("✅ Connected to Destination.")
 
         # 4. Read all data from source
         print("📥 Reading data from source database...")
