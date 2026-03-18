@@ -68,15 +68,14 @@ def sync_databases():
                 city TEXT,
                 country TEXT,
                 raw_text TEXT,
-                url TEXT,
-                date TEXT
+                url TEXT
             );
         ''')
         dest_conn.commit()
 
         # 4. Read all data from source
         print("📥 Reading data from source database...")
-        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL", "Date" FROM {SRC_TABLE}')
+        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
         rows = src_cursor.fetchall()
         
         if not rows:
@@ -93,14 +92,13 @@ def sync_databases():
                 city TEXT,
                 country TEXT,
                 raw_text TEXT,
-                url TEXT,
-                date TEXT
+                url TEXT
             ) ON COMMIT DROP;
         ''')
 
         execute_values(
             dest_cursor,
-            '''INSERT INTO temp_sync (company, title, city, country, raw_text, url, date) 
+            '''INSERT INTO temp_sync (company, title, city, country, raw_text, url) 
                VALUES %s''',
             rows
         )
@@ -112,16 +110,15 @@ def sync_databases():
                 title = t.title,
                 city = t.city,
                 country = t.country,
-                raw_text = t.raw_text,
-                date = t.date
+                raw_text = t.raw_text
             FROM temp_sync t
             WHERE j.url = t.url;
         ''')
 
         # Insert new records
         dest_cursor.execute(f'''
-            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url, date)
-            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url, t.date
+            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url)
+            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url
             FROM temp_sync t
             WHERE NOT EXISTS (
                 SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
