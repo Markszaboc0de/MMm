@@ -10,6 +10,7 @@ Usage:
 """
 
 import os
+import sys
 import psycopg2
 from psycopg2.extras import execute_values
 
@@ -100,6 +101,7 @@ def sync_databases():
         print(f"❌ Error during synchronization: {e}")
         if dest_conn:
             dest_conn.rollback()
+        sys.exit(1)
     
     finally:
         if src_conn:
