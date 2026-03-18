@@ -7,65 +7,58 @@ import glob
 from datetime import datetime
 
 MODULES_FOLDER = "modules"
+# data/ folder is a sibling of the modules/ folder
 DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-# Add root directory to path to import postgres_export
+# Add project root to path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(ROOT_DIR)
+sys.path.insert(0, ROOT_DIR)
 from postgres_export import push_to_postgres
 
-
-def get_jobs_from_db(db_path):
-    """Read jobs from a single SQLite database file and return as list of dicts."""
-    jobs = []
-    db_name = os.path.basename(db_path)
-
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        # Ensure country column exists
-        cursor.execute("PRAGMA table_info(jobs)")
-        columns = [info[1] for info in cursor.fetchall()]
-        if 'country' not in columns:
-            conn.execute("ALTER TABLE jobs ADD COLUMN country TEXT DEFAULT 'Hungary'")
-            conn.commit()
-        if 'company' not in columns:
-            guessed = db_name.replace("_jobs.db", "").upper()
-            conn.execute(f"ALTER TABLE jobs ADD COLUMN company TEXT DEFAULT '{guessed}'")
-            conn.commit()
-
-        scrape_date = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute("SELECT company, title, city, country, description, url FROM jobs")
-        for row in cursor.fetchall():
-            jobs.append({
-                'company':         row[0],
-                'job_title':       row[1],
-                'city':            row[2],
-                'country':         row[3],
-                'job_description': row[4],
-                'url':             row[5],
-                'date':            scrape_date,
-            })
-        conn.close()
-    except Exception as e:
-        print(f"   ⚠️ Could not read {db_name}: {e}")
-
-    return jobs
+# Max seconds a single scraper is allowed to run before being killed
+SCRAPER_TIMEOUT = 180  # 3 minutes per module
 
 
-def export_new_jobs_to_postgres():
-    """Read all SQLite dbs in data/ and push their contents to PostgreSQL."""
-    if not os.path.exists(DATA_FOLDER):
-        return
-    db_files = glob.glob(os.path.join(DATA_FOLDER, "*.db"))
+def get_all_jobs_from_sqlite():
+    """Read all jobs from all SQLite .db files in the data/ directory."""
     all_jobs = []
+    if not os.path.exists(DATA_FOLDER):
+        print(f"   ⚠️  data/ folder not found: {DATA_FOLDER}")
+        return all_jobs
+
+    db_files = glob.glob(os.path.join(DATA_FOLDER, "*.db"))
+    if not db_files:
+        print(f"   ⚠️  No .db files found in {DATA_FOLDER}")
+        return all_jobs
+
+    scrape_date = datetime.now().strftime('%Y-%m-%d')
     for db_path in db_files:
-        all_jobs.extend(get_jobs_from_db(db_path))
-    if all_jobs:
-        push_to_postgres(all_jobs)
-    else:
-        print("   ℹ️  No jobs found in SQLite dbs to export.")
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(jobs)")
+            cols = [r[1] for r in cursor.fetchall()]
+            # Determine which column holds the job title
+            title_col = 'title' if 'title' in cols else (cols[1] if len(cols) > 1 else None)
+            if not title_col:
+                conn.close()
+                continue
+            cursor.execute(f"SELECT company, {title_col}, city, country, description, url FROM jobs")
+            for row in cursor.fetchall():
+                all_jobs.append({
+                    'company':         row[0] or '',
+                    'job_title':       row[1] or '',
+                    'city':            row[2] or '',
+                    'country':         row[3] or 'Hungary',
+                    'job_description': row[4] or '',
+                    'url':             row[5] or '',
+                    'date':            scrape_date,
+                })
+            conn.close()
+        except Exception as e:
+            print(f"   ⚠️  Error reading {os.path.basename(db_path)}: {e}")
+
+    return all_jobs
 
 
 def run_all_modules():
@@ -89,35 +82,42 @@ def run_all_modules():
 
     for module in modules:
         module_path = os.path.join(MODULES_FOLDER, module)
-        print(f"▶️ Running: {module}...")
+        print(f"▶️ Running: {module}...", flush=True)
 
         try:
+            # Stream output directly so errors are visible, with a timeout
             result = subprocess.run(
                 [sys.executable, module_path],
-                capture_output=True, text=True
+                timeout=SCRAPER_TIMEOUT,
+                # Do NOT use capture_output - let output flow to terminal
             )
 
             if result.returncode == 0:
-                print(f"   ✅ Success!")
+                print(f"   ✅ Success! Pushing to PostgreSQL...", flush=True)
+                jobs = get_all_jobs_from_sqlite()
+                if jobs:
+                    push_to_postgres(jobs)
+                    print(f"   📤 Pushed {len(jobs)} total jobs to PostgreSQL.", flush=True)
+                else:
+                    print(f"   ⚠️  No jobs found in SQLite to push.", flush=True)
                 success_count += 1
-                # 🔴 Export immediately to PostgreSQL after each successful scraper
-                print(f"   📤 Pushing to PostgreSQL...")
-                export_new_jobs_to_postgres()
             else:
-                print(f"   ❌ Failed. Error log:")
-                print(f"      {result.stderr.strip()}")
+                print(f"   ❌ Failed (exit code {result.returncode}).", flush=True)
                 fail_count += 1
 
+        except subprocess.TimeoutExpired:
+            print(f"   ⏰ TIMEOUT after {SCRAPER_TIMEOUT}s — killing and moving on.", flush=True)
+            fail_count += 1
         except Exception as e:
-            print(f"   ❌ Critical failure running {module}: {e}")
+            print(f"   ❌ Critical error: {e}", flush=True)
             fail_count += 1
 
-        print("-" * 50)
-        time.sleep(2)
+        print("-" * 50, flush=True)
+        time.sleep(1)
 
     print("\n🏁 PIPELINE COMPLETE")
-    print(f"📈 Successful Modules: {success_count}")
-    print(f"📉 Failed Modules: {fail_count}")
+    print(f"📈 Successful: {success_count}")
+    print(f"📉 Failed/Timeout: {fail_count}")
 
 
 if __name__ == "__main__":
