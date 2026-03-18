@@ -1,6 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+
+import sys as _sys
+import os as _os
+_sys.path.append(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+from driver_setup import get_chrome_driver
 from bs4 import BeautifulSoup
 import sqlite3
 import os
@@ -47,15 +52,7 @@ def run_scraper():
     print(f"   🏢 Scraper indítása: {COMPANY_NAME} (Egyszerű SPA mód)...")
     init_db()
 
-    options = Options()
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.binary_location = "/usr/bin/chromium-browser"
-    _service = Service(executable_path="/usr/bin/chromedriver")
-    driver = webdriver.Chrome(service=_service, options=options)
+    driver = get_chrome_driver()
     try:
         driver.get(BASE_URL)
         print("   ⏳ Várakozás az oldal betöltésére (6 mp)...")
