@@ -33,7 +33,7 @@ DEST_PASS = os.getenv("DEST_PG_PASSWORD", "Mindenszarhoz")
 
 # Table Names
 SRC_TABLE  = "scraped_jobs"
-DEST_TABLE = "scraped_jobs" # Ensure this matches your destination schema
+DEST_TABLE = "job_descriptions" # Automatically insert into the real dataset
 
 def sync_databases():
     print(f"🔄 Starting database sync from {SRC_DB} to {DEST_DB}...")
@@ -54,49 +54,43 @@ def sync_databases():
         )
         dest_cursor = dest_conn.cursor()
 
-        # 3. Create destination table if it doesn't exist (matching raw_db schema)
-        dest_cursor.execute(f'''
-            CREATE TABLE IF NOT EXISTS {DEST_TABLE} (
-                "ID" SERIAL PRIMARY KEY,
-                "Company" TEXT,
-                "Job Title" TEXT,
-                "City" TEXT,
-                "Country" TEXT,
-                "Job Description" TEXT,
-                "URL" TEXT UNIQUE,
-                "Date" TEXT
-            );
-        ''')
-        dest_conn.commit()
-
         # 4. Read all data from source
         print("📥 Reading data from source database...")
-        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL", "Date" FROM {SRC_TABLE}')
-        rows = src_cursor.fetchall()
+        # Only select the columns we need for job_descriptions
+        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
+        raw_rows = src_cursor.fetchall()
         
-        if not rows:
+        if not raw_rows:
             print("⚠️ No data found in source database.")
             return
 
-        print(f"📤 Preparing to sync {len(rows)} rows to destination database...")
+        # Map strictly to destination schema
+        # jd_id SERIAL PRIMARY KEY, company, title, city, country, raw_text, url, employer_id
+        formatted_rows = []
+        for row in raw_rows:
+            c_company, c_title, c_city, c_country, c_raw_text, c_url = row
+            employer_id = None # Null for scraped jobs
+            formatted_rows.append((c_company, c_title, c_city, c_country, c_raw_text, c_url, employer_id))
+
+        print(f"📤 Preparing to sync {len(formatted_rows)} rows to destination database...")
 
         # 5. Upsert into destination
         upsert_query = f'''
-            INSERT INTO {DEST_TABLE} ("Company", "Job Title", "City", "Country", "Job Description", "URL", "Date")
+            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url, employer_id)
             VALUES %s
-            ON CONFLICT ("URL") DO UPDATE SET
-                "Company" = EXCLUDED."Company",
-                "Job Title" = EXCLUDED."Job Title",
-                "City" = EXCLUDED."City",
-                "Country" = EXCLUDED."Country",
-                "Job Description" = EXCLUDED."Job Description",
-                "Date" = EXCLUDED."Date";
+            ON CONFLICT (url) DO UPDATE SET
+                company = EXCLUDED.company,
+                title = EXCLUDED.title,
+                city = EXCLUDED.city,
+                country = EXCLUDED.country,
+                raw_text = EXCLUDED.raw_text,
+                employer_id = EXCLUDED.employer_id;
         '''
         
-        execute_values(dest_cursor, upsert_query, rows)
+        execute_values(dest_cursor, upsert_query, formatted_rows)
         dest_conn.commit()
 
-        print(f"✅ Successfully synchronized {len(rows)} jobs to {DEST_DB} at {DEST_HOST}!")
+        print(f"✅ Successfully synchronized {len(formatted_rows)} jobs to {DEST_DB} at {DEST_HOST}!")
 
     except Exception as e:
         print(f"❌ Error during synchronization: {e}")
