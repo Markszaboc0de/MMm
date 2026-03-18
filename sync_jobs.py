@@ -69,7 +69,7 @@ def sync_databases():
         formatted_rows = []
         for row in raw_rows:
             c_company, c_title, c_city, c_country, c_raw_text, c_url = row
-            employer_id = None # Null for scraped jobs
+            employer_id = c_company # Use company name for employer_id
             formatted_rows.append((c_company, c_title, c_city, c_country, c_raw_text, c_url, employer_id))
 
         print(f"📤 Preparing to sync {len(formatted_rows)} rows to destination database...")
