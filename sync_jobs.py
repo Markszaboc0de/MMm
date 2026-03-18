@@ -62,14 +62,14 @@ def sync_databases():
         # 3. Create destination table if it doesn't exist (matching raw_db schema)
         dest_cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {DEST_TABLE} (
-                "ID" SERIAL PRIMARY KEY,
-                "Company" TEXT,
-                "Job Title" TEXT,
-                "City" TEXT,
-                "Country" TEXT,
-                "Job Description" TEXT,
-                "URL" TEXT,
-                "Date" TEXT
+                id SERIAL PRIMARY KEY,
+                company TEXT,
+                job_title TEXT,
+                city TEXT,
+                country TEXT,
+                job_description TEXT,
+                url TEXT,
+                date TEXT
             );
         ''')
         dest_conn.commit()
@@ -88,19 +88,19 @@ def sync_databases():
         # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
         dest_cursor.execute('''
             CREATE TEMP TABLE temp_sync (
-                "Company" TEXT,
-                "Job Title" TEXT,
-                "City" TEXT,
-                "Country" TEXT,
-                "Job Description" TEXT,
-                "URL" TEXT,
-                "Date" TEXT
+                company TEXT,
+                job_title TEXT,
+                city TEXT,
+                country TEXT,
+                job_description TEXT,
+                url TEXT,
+                date TEXT
             ) ON COMMIT DROP;
         ''')
 
         execute_values(
             dest_cursor,
-            '''INSERT INTO temp_sync ("Company", "Job Title", "City", "Country", "Job Description", "URL", "Date") 
+            '''INSERT INTO temp_sync (company, job_title, city, country, job_description, url, date) 
                VALUES %s''',
             rows
         )
@@ -108,23 +108,23 @@ def sync_databases():
         # Update existing records
         dest_cursor.execute(f'''
             UPDATE {DEST_TABLE} j
-            SET "Company" = t."Company",
-                "Job Title" = t."Job Title",
-                "City" = t."City",
-                "Country" = t."Country",
-                "Job Description" = t."Job Description",
-                "Date" = t."Date"
+            SET company = t.company,
+                job_title = t.job_title,
+                city = t.city,
+                country = t.country,
+                job_description = t.job_description,
+                date = t.date
             FROM temp_sync t
-            WHERE j."URL" = t."URL";
+            WHERE j.url = t.url;
         ''')
 
         # Insert new records
         dest_cursor.execute(f'''
-            INSERT INTO {DEST_TABLE} ("Company", "Job Title", "City", "Country", "Job Description", "URL", "Date")
-            SELECT t."Company", t."Job Title", t."City", t."Country", t."Job Description", t."URL", t."Date"
+            INSERT INTO {DEST_TABLE} (company, job_title, city, country, job_description, url, date)
+            SELECT t.company, t.job_title, t.city, t.country, t.job_description, t.url, t.date
             FROM temp_sync t
             WHERE NOT EXISTS (
-                SELECT 1 FROM {DEST_TABLE} j WHERE j."URL" = t."URL"
+                SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
             );
         ''')
         
