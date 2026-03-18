@@ -42,11 +42,11 @@ def run_scraper():
     init_db()
 
     options = uc.ChromeOptions()
-    options.add_argument('--headless=new')
-    options.add_argument("--window-size=1920,1080")
+        options.add_argument("--window-size=1920,1080")
 
     try:
-        driver = uc.Chrome(options=options, version_main=CHROME_VERSION)
+        options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     except Exception as e:
         print(f"❌ Driver hiba: {e}")
         return

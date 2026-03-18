@@ -47,7 +47,7 @@ def create_driver():
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    return uc.Chrome(options=options, version_main=145)
+    return uc.Chrome(options=options)
 
 
 def run_scraper():

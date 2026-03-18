@@ -91,7 +91,8 @@ def run_scraper():
     options.add_argument(
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-    driver = uc.Chrome(options=options, version_main=145)
+    options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     job_links = []
     unique_urls = set()
 

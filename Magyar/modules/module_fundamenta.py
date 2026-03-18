@@ -48,7 +48,8 @@ def run_scraper():
 
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
-    driver = uc.Chrome(options=options, version_main=CHROME_VERSION)
+    options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     wait = WebDriverWait(driver, 15)
 
     try:

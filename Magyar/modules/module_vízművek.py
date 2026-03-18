@@ -44,7 +44,8 @@ def run_scraper():
 
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
-    driver = uc.Chrome(options=options, version_main=145)
+    options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
 
     try:
         print(f"📂 Vízművek karrieroldal megnyitása: {BASE_URL}")

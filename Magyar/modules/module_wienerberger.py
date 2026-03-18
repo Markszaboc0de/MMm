@@ -73,7 +73,8 @@ def run_scraper():
     options.add_argument("--disable-popup-blocking")
     options.add_argument("--window-size=1920,1080")
 
-    driver = uc.Chrome(options=options, version_main=CHROME_VERSION)
+    options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 

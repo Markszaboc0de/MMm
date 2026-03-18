@@ -47,10 +47,10 @@ def run_scraper():
     init_db()
 
     options = uc.ChromeOptions()
-    options.add_argument('--headless=new')
-
+    
     try:
-        driver = uc.Chrome(options=options, version_main=145)
+        options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     except Exception as e:
         print(f"   ❌ Hiba a Chrome elindításakor. Részletek: {e}")
         return

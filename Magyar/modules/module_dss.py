@@ -48,11 +48,11 @@ def run_scraper():
 
     options = uc.ChromeOptions()
     # Rejtett mód (vedd ki a hashtaget, ha látni akarod)
-    options.add_argument('--headless=new')
-    options.add_argument("--window-size=1920,1080")
+        options.add_argument("--window-size=1920,1080")
 
     try:
-        driver = uc.Chrome(options=options, version_main=145)
+        options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
     except Exception as e:
         print(f"   ❌ Hiba a Chrome elindításakor: {e}")
         return

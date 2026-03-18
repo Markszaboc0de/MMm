@@ -36,7 +36,8 @@ def run_scraper():
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
     # A Taleo érzékeny a botokra, maradunk az undetected-nél
-    driver = uc.Chrome(options=options, version_main=145)
+    options.add_argument("--headless=new")
+    driver = uc.Chrome(options=options)
 
     job_links = []
 
