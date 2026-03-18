@@ -64,10 +64,10 @@ def sync_databases():
             CREATE TABLE IF NOT EXISTS {DEST_TABLE} (
                 id SERIAL PRIMARY KEY,
                 company TEXT,
-                job_title TEXT,
+                title TEXT,
                 city TEXT,
                 country TEXT,
-                job_description TEXT,
+                raw_text TEXT,
                 url TEXT,
                 date TEXT
             );
@@ -89,10 +89,10 @@ def sync_databases():
         dest_cursor.execute('''
             CREATE TEMP TABLE temp_sync (
                 company TEXT,
-                job_title TEXT,
+                title TEXT,
                 city TEXT,
                 country TEXT,
-                job_description TEXT,
+                raw_text TEXT,
                 url TEXT,
                 date TEXT
             ) ON COMMIT DROP;
@@ -100,7 +100,7 @@ def sync_databases():
 
         execute_values(
             dest_cursor,
-            '''INSERT INTO temp_sync (company, job_title, city, country, job_description, url, date) 
+            '''INSERT INTO temp_sync (company, title, city, country, raw_text, url, date) 
                VALUES %s''',
             rows
         )
@@ -109,10 +109,10 @@ def sync_databases():
         dest_cursor.execute(f'''
             UPDATE {DEST_TABLE} j
             SET company = t.company,
-                job_title = t.job_title,
+                title = t.title,
                 city = t.city,
                 country = t.country,
-                job_description = t.job_description,
+                raw_text = t.raw_text,
                 date = t.date
             FROM temp_sync t
             WHERE j.url = t.url;
@@ -120,8 +120,8 @@ def sync_databases():
 
         # Insert new records
         dest_cursor.execute(f'''
-            INSERT INTO {DEST_TABLE} (company, job_title, city, country, job_description, url, date)
-            SELECT t.company, t.job_title, t.city, t.country, t.job_description, t.url, t.date
+            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url, date)
+            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url, t.date
             FROM temp_sync t
             WHERE NOT EXISTS (
                 SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
