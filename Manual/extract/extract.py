@@ -1,14 +1,17 @@
 import sqlite3
-import csv
 import os
 import glob
+import sys
 from datetime import datetime
+
+# Add root directory to path to import postgres_export
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from postgres_export import push_to_postgres
 
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
 DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
-OUTPUT_CSV = r"C:\Users\kgyoz\Documents\Projekt\Manual\manual_jobs_export.csv"
 
 
 def fix_schema(db_path, db_name):
@@ -72,9 +75,16 @@ def export_all_databases():
             rows = cursor.fetchall()
 
             for row in rows:
-                formatted_row = list(row)
-                formatted_row.append(scrape_date)
-                all_jobs.append(formatted_row)
+                job_dict = {
+                    'company': row[0],
+                    'job_title': row[1],
+                    'city': row[2],
+                    'country': row[3],
+                    'job_description': row[4],
+                    'url': row[5],
+                    'date': scrape_date
+                }
+                all_jobs.append(job_dict)
 
             conn.close()
         except sqlite3.OperationalError as e:
@@ -84,15 +94,9 @@ def export_all_databases():
         print("\n⚠️ Az adatbázisok üresek. Nincs mit exportálni.")
         return
 
-    all_jobs.sort(key=lambda x: (str(x[0]), str(x[1])))
+    # Push to PostgreSQL
+    push_to_postgres(all_jobs)
 
-    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8-sig") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(["company", "title", "city", "country",
-                        "description", "url", "date_of_scraping"])
-        writer.writerows(all_jobs)
-
-    print(f"\n✨ SIKER! Az összesített fájl mentve: {OUTPUT_CSV}")
 
 
 if __name__ == "__main__":

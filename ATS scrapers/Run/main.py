@@ -9,6 +9,10 @@ import sqlite3
 import csv
 from datetime import datetime
 
+# Add root directory to path to import postgres_export
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from postgres_export import push_to_postgres
+
 def find_scrapers():
     scrapers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scrapers")
     if not os.path.exists(scrapers_dir):
@@ -97,7 +101,16 @@ def export_unified_data():
                     url = row[0]
                     if url not in seen_urls:
                         seen_urls.add(url)
-                        all_jobs.append(row)
+                        all_jobs.append({
+                            'url': row[0],
+                            'job_title': row[1],
+                            'company': row[2],
+                            'location_raw': row[3],
+                            'city': row[4],
+                            'country': row[5],
+                            'job_description': row[6],
+                            'date': row[7]
+                        })
                 
                 conn.close()
             except Exception as e:
@@ -113,13 +126,9 @@ def export_unified_data():
         return
         
     try:
-        with open(unified_csv_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(columns)
-            writer.writerows(all_jobs)
-        print(f"✅ Successfully exported {len(all_jobs)} unique jobs to {unified_csv_path}")
+        push_to_postgres(all_jobs)
     except Exception as e:
-        print(f"❌ Error writing unified CSV: {e}")
+        print(f"❌ Error writing unified Postgres: {e}")
 
 
 if __name__ == "__main__":

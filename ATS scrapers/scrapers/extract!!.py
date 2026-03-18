@@ -1,16 +1,18 @@
 import sqlite3
-import csv
 import os
 import glob
+import sys
 from datetime import datetime
+
+# Add root directory to path to import postgres_export
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from postgres_export import push_to_postgres
 
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
 # Updated paths to match your new ATS Scrapers architecture
 DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\ATS scrapers\data"
-OUTPUT_CSV = r"C:\Users\kgyoz\Documents\Projekt\ATS scrapers\ats_jobs_export.csv"
-
 
 def fix_schema(db_path, db_name):
     """Ellenőrzi és pótolja a hiányzó oszlopokat az adatbázisban."""
@@ -81,8 +83,17 @@ def export_all_databases():
                 description = row[4]
                 url = row[5]
 
-                all_jobs.append([company, title, city, country,
-                                description, url, scrape_date])
+                job_dict = {
+                    'company': company,
+                    'job_title': title,
+                    'city': city,
+                    'country': country,
+                    'job_description': description,
+                    'url': url,
+                    'date': scrape_date
+                }
+
+                all_jobs.append(job_dict)
 
             conn.close()
         except sqlite3.OperationalError as e:
@@ -92,17 +103,7 @@ def export_all_databases():
         print("\n⚠️ Az adatbázisok üresek. Nincs mit exportálni.")
         return
 
-    # Sort alphabetically by Company, then by Job Title
-    all_jobs.sort(key=lambda x: (str(x[0]), str(x[1])))
-
-    # Using utf-8-sig ensures Excel reads Hungarian characters (á, é, ő) perfectly
-    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8-sig") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(["company", "title", "city", "country",
-                        "description", "url", "date_of_scraping"])
-        writer.writerows(all_jobs)
-
-    print(f"\n✨ SIKER! Az összesített fájl mentve: {OUTPUT_CSV}")
+    push_to_postgres(all_jobs)
 
 
 if __name__ == "__main__":
