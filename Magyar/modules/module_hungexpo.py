@@ -1,4 +1,6 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -39,16 +41,14 @@ def save_to_db(job_data):
 
 
 def run_scraper():
-    options = uc.ChromeOptions()
-        options.add_argument("--window-size=1920,1080")
-
-    print(f"🚀 Driver indítása (v{CHROME_VERSION})...")
-    try:
-        options.add_argument("--headless=new")
-    driver = uc.Chrome(options=options)
-    except Exception as e:
-        print(f"❌ Hiba: {e}")
-        return
+    print(f"🚀 Driver indítása...")
+    options = Options()
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(options=options)
 
     try:
         print(f"🔗 Főoldal betöltése: {URL}")

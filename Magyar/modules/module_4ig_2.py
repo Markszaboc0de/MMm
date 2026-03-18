@@ -1,4 +1,6 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -43,16 +45,13 @@ def run_scraper():
     print(f"🚀 {COMPANY_NAME} Scraper indítása (Fix város: Budapest)...")
     init_db()
 
-    options = uc.ChromeOptions()
+    options = Options()
     options.add_argument("--window-size=1280,1024")
-    
-    try:
-        options.add_argument("--headless=new")
-    driver = uc.Chrome(options=options)
-    except Exception as e:
-        print(f"❌ Driver hiba: {e}")
-        return
-
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(options=options)
     try:
         driver.get(BASE_URL)
         time.sleep(5)
@@ -117,8 +116,6 @@ def run_scraper():
         conn.close()
         print(f"\n✨ SIKER! Az adatok mentve Budapest várossal ide: {DB_PATH}")
 
-    except Exception as e:
-        print(f"💥 Kritikus hiba: {e}")
     finally:
         driver.quit()
 

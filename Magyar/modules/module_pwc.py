@@ -1,4 +1,6 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -47,16 +49,13 @@ def run_scraper():
     print(f"   🏢 Scraper indítása: {COMPANY_NAME} (Kétfázisú Gyűjtő mód)...")
     init_db()
 
-    options = uc.ChromeOptions()
-        options.add_argument("--window-size=1920,1080")
-
-    try:
-        options.add_argument("--headless=new")
-    driver = uc.Chrome(options=options)
-    except Exception as e:
-        print(f"   ❌ Hiba a Chrome elindításakor: {e}")
-        return
-
+    options = Options()
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(options=options)
     try:
         # FÁZIS 1: ÖSSZES LINK KIGYŰJTÉSE ODA-VISSZA UGRÁLÁS NÉLKÜL
         print("   📥 FÁZIS 1: Álláslinkek összegyűjtése...")
@@ -230,9 +229,6 @@ def run_scraper():
         print(
             f"\n   ✅ {COMPANY_NAME} teljesen kész! {new_jobs_added} új állás lementve az adatbázisba.")
 
-    except Exception as e:
-        print(
-            f"   ❌ Kritikus hiba a(z) {COMPANY_NAME} oldal futtatása közben: {e}")
     finally:
         try:
             if 'driver' in locals():

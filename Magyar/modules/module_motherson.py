@@ -1,4 +1,6 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import sqlite3
 import os
@@ -45,16 +47,13 @@ def run_scraper():
     print(f"   🏢 Scraper indítása: {COMPANY_NAME} (Egyszerű SPA mód)...")
     init_db()
 
-    options = uc.ChromeOptions()
-        options.add_argument("--window-size=1920,1080")
-
-    try:
-        options.add_argument("--headless=new")
-    driver = uc.Chrome(options=options)
-    except Exception as e:
-        print(f"   ❌ Hiba a Chrome elindításakor: {e}")
-        return
-
+    options = Options()
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(options=options)
     try:
         driver.get(BASE_URL)
         print("   ⏳ Várakozás az oldal betöltésére (6 mp)...")
@@ -178,9 +177,6 @@ def run_scraper():
         print(
             f"   ✅ {COMPANY_NAME} kész! {new_jobs_added} új állás lementve az adatbázisba.")
 
-    except Exception as e:
-        print(
-            f"   ❌ Kritikus hiba a(z) {COMPANY_NAME} oldal futtatása közben: {e}")
     finally:
         try:
             if 'driver' in locals():
