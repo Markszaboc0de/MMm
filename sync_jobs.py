@@ -79,20 +79,47 @@ def sync_databases():
 
         print(f"📤 Preparing to sync {len(formatted_rows)} rows to destination database...")
 
-        # 5. Upsert into destination
-        upsert_query = f'''
+        # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
+        dest_cursor.execute('''
+            CREATE TEMP TABLE temp_sync (
+                company TEXT,
+                title TEXT,
+                city TEXT,
+                country TEXT,
+                raw_text TEXT,
+                url TEXT,
+                employer_id INTEGER
+            ) ON COMMIT DROP;
+        ''')
+
+        execute_values(
+            dest_cursor,
+            "INSERT INTO temp_sync (company, title, city, country, raw_text, url, employer_id) VALUES %s",
+            formatted_rows
+        )
+
+        # Update existing records
+        dest_cursor.execute(f'''
+            UPDATE {DEST_TABLE} j
+            SET company = t.company,
+                title = t.title,
+                city = t.city,
+                country = t.country,
+                raw_text = t.raw_text
+            FROM temp_sync t
+            WHERE j.url = t.url;
+        ''')
+
+        # Insert new records
+        dest_cursor.execute(f'''
             INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url, employer_id)
-            VALUES %s
-            ON CONFLICT (url) DO UPDATE SET
-                company = EXCLUDED.company,
-                title = EXCLUDED.title,
-                city = EXCLUDED.city,
-                country = EXCLUDED.country,
-                raw_text = EXCLUDED.raw_text,
-                employer_id = EXCLUDED.employer_id;
-        '''
+            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url, t.employer_id
+            FROM temp_sync t
+            WHERE NOT EXISTS (
+                SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
+            );
+        ''')
         
-        execute_values(dest_cursor, upsert_query, formatted_rows)
         dest_conn.commit()
 
         print(f"✅ Successfully synchronized {len(formatted_rows)} jobs to {DEST_DB} at {DEST_HOST}!")
