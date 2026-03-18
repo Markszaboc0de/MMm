@@ -14,7 +14,7 @@ COMPANY_NAME = "Alfaped"
 BASE_URL = "https://alfaped.hu/karrier/"
 
 # 🎯 Az adatmappa pontos elérési útja
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "alfaped_jobs.db")
 
 

@@ -25,7 +25,7 @@ BASE_URLS = [
     "https://mvm.karrierportal.hu/gyakornoki-program",
     "https://mvm.karrierportal.hu/kotelezo-gyakorlat"
 ]
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "mvm_jobs.db")
 
 

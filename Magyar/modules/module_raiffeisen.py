@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Raiffeisen_Bank"
 BASE_URL = "https://raiffeisen.karrierportal.hu/allasok?q=bGV2ZWxzJTVCJTVEJTNER3lha29ybm9rJTJGUCVDMyVBMWx5YWtlemQlQzUlOTElMjYuuzzuuzz#!"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "raiffeisen_jobs.db")
 
 

@@ -15,7 +15,7 @@ COMPANY_NAME = "Audi Hungaria"
 BASE_URL = "https://audi.hu/gyakorlat/nyitott-poziciok"
 
 # 🎯 Az adatmappa pontos elérési útja
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 
 # 🗄️ SAJÁT ADATBÁZIS AZ AUDINAK
 DB_PATH = os.path.join(DATA_FOLDER, "audi_jobs.db")

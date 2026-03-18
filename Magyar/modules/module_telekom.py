@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "DT_ITS"
 BASE_URL = "https://www.deutschetelekomitsolutions.hu/nyitott-poziciok/"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "dtits_jobs.db")
 
 

@@ -14,7 +14,7 @@ COMPANY_NAME = "AgileXpert"
 BASE_URL = "https://agilexpert.hu/karrier/"
 
 # 🎯 The EXACT custom data folder path
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "agilexpert_jobs.db")
 
 

@@ -15,7 +15,7 @@ COMPANY_NAME = "Schneider Electric"
 API_URL = "https://careers.se.com/api/jobs"
 BASE_JOB_URL = "https://careers.se.com/jobs/"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "schneider_jobs.db")
 
 # The EU Countries you want to filter by

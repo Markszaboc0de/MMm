@@ -15,7 +15,7 @@ COMPANY_NAME = "BuildEXT"
 BASE_URL = "https://buildext.com/karrier/"
 
 # 🎯 Az adatmappa pontos elérési útja
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 
 # 🗄️ SAJÁT ADATBÁZIS A BUILDEXT-NEK
 DB_PATH = os.path.join(DATA_FOLDER, "buildext_jobs.db")

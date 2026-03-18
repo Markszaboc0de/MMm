@@ -19,7 +19,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "MBH_Bank_All"
 MAIN_URL = "https://karrier.mbhbank.hu/Datacenter/Registration/JobAdvertisements/allasok"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "mbh_jobs.db")
 
 

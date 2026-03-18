@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "4iG_1"
 BASE_URL = "https://karrier.4ig.hu/allasok"
 DOMAIN_URL = "https://karrier.4ig.hu"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "4ig_jobs.db")
 CHROME_VERSION = 145
 

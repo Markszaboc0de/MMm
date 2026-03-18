@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Knorr-Bremse"
 BASE_URL = "https://careers.knorr-bremse.com/content/search/?locale=hu_HU&brand=Knorr-Bremse"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "knorrbremse_jobs.db")
 
 JS_DEEP_QUERY = """

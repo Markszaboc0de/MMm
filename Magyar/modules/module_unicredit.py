@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "UniCredit_Bank"
 BASE_URL = "https://careers.unicredit.eu/hu_HU/jobsuche/SearchJobs/?1286=%5B1888%5D&1286_format=1068&&listFilterMode=1&jobRecordsPerPage=15&"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "unicredit_jobs.db")
 
 

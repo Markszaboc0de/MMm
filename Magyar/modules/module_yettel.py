@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Yettel"
 # A keresési alap URL (A startrow paramétert dinamikusan fűzzük hozzá)
 BASE_URL = "https://jobs.ceetelcogroup.com/yettel/search/?q=&location=HU"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "yettel_jobs.db")
 
 

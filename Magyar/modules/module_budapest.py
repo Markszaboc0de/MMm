@@ -15,7 +15,7 @@ COMPANY_NAME = "Budapest Főpolgármesteri Hivatal"
 BASE_URL = "https://budapest.hu/varoshaza/fopolgarmesteri-hivatal/karrier/nyitott-poziciok"
 
 # 🎯 Az adatmappa pontos elérési útja
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 
 # 🗄️ SAJÁT ADATBÁZIS
 DB_PATH = os.path.join(DATA_FOLDER, "budapest_jobs.db")

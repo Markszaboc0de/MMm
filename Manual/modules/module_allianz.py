@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- CONFIGURATION ---
 COMPANY_NAME = "Allianz"
 BASE_URL = "https://careers.allianz.com/global/en/search-results"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "allianz_jobs.db")
 
 FILTERS_TO_APPLY = [

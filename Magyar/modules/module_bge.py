@@ -24,7 +24,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "BGE"
 BASE_URL = "https://allasok.uni-bge.hu/DataCenter/Registration/JobAdvertisements/allasok"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "bge_jobs.db")
 
 

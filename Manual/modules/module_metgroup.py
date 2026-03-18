@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "MET Group"
 # We will use URL formatting to handle pagination cleanly
 BASE_URL_TEMPLATE = "https://met.com/en/people-and-career/career-portal/?country=all&page={}"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "metgroup_jobs.db")
 
 

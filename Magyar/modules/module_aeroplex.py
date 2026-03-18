@@ -23,7 +23,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Aeroplex"
 BASE_URL = "https://karrier.aeroplex.com/go/%C3%81ll%C3%A1saink/9377955/"
 DOMAIN_URL = "https://karrier.aeroplex.com"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "aeroplex_jobs.db")
 CHROME_VERSION = 145
 

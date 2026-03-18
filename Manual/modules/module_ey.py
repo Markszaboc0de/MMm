@@ -25,7 +25,7 @@ COMPANY_NAME = "EY"
 # The specific EY Yello Board URL
 BASE_URL = "https://eyglobal.yello.co/job_boards/c1riT--B2O-KySgYWsZO1Q?locale=en"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "ey_jobs.db")
 
 # Time Constraint: 2 Months (60 days)

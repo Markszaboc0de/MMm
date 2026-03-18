@@ -23,7 +23,7 @@ COMPANY_NAME = "Motherson"
 # Az új, egyszerűsített URL
 BASE_URL = "https://careers.motherson.com/en/jobs"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "motherson_jobs.db")
 
 

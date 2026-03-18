@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- CONFIGURATION ---
 COMPANY_NAME = "Continental"
 BASE_URL = "https://jobs.continental.com/en/#/?entryLevel_stringS=c4a378c8-234a-473b-bf18-1c139155575f,2ca3c248-1ffe-482c-b94a-1da19f0c857d,5e8bd685-42a9-4a67-af8c-3d4aed822c76,0131ce3c-8b5b-4b63-bbb6-24d80fb3d76e,8bbd3b6d-969a-4b6f-ab96-53be00ff4681,5d63c039-eb80-4f3c-b55e-bf71f84cae68,ef2d950f-3f99-4019-9d2c-868558a3688e"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "continental_jobs.db")
 
 

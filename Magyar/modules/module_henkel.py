@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Henkel"
 # Az új, bővebb keresési URL
 BASE_URL = "https://www.henkel.hu/karrier/allasok-es-jelentkezes#selectFilterByParameter=Career_Level_18682=Students%3BGraduates%3BPupils&Locations_279384=Europe&startIndex=0&loadCount=10&"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "henkel_jobs.db")
 
 

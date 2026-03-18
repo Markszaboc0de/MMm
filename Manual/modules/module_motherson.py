@@ -25,7 +25,7 @@ COMPANY_NAME = "Motherson"
 # Your exact filtered URL
 BASE_URL = "https://careers.motherson.com/en/jobs?country=Hungary&country=CzechRepublic&country=Estonia&country=France&country=Germany&country=Lithuania&country=Poland&country=Spain&experience=Entrylevel&experience=Kezd%25C5%2591%25C3%25A9sgyakornok%252CStudentsInterns%252CDualstudies&experience=Internship%252CThesis"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "motherson_jobs.db")
 
 

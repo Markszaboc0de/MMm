@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Emerson"
 # Az általad küldött URL, ami már szűrve van Magyarországra és Gyakornoki/Pályakezdő pozíciókra
 BASE_URL = "https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?lastSelectedFacet=AttributeChar2&location=Hungary&selectedFlexFieldsFacets=%22AttributeChar2%7CEntry-level%3BStudent+Internships%2FCo-ops%22"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "emerson_jobs.db")
 
 

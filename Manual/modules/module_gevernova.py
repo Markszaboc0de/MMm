@@ -23,7 +23,7 @@ COMPANY_NAME = "GE Vernova"
 DOMAIN_URL = "https://careers.gevernova.com"
 # Filtered URL from the prompt (Europe + Early Career/Interns)
 BASE_URL = "https://careers.gevernova.com/jobs?filter%5Bcf_custom_mapping%5D%5B0%5D=Apprentice&filter%5Bcf_custom_mapping%5D%5B1%5D=Co-op%2FIntern&filter%5Bcf_custom_mapping%5D%5B2%5D=Development%20Program&filter%5Bcf_custom_mapping%5D%5B3%5D=Early%20Career&filter%5Bcountry%5D%5B0%5D=Austria&filter%5Bcountry%5D%5B1%5D=France&filter%5Bcountry%5D%5B2%5D=Germany&filter%5Bcountry%5D%5B3%5D=Greece&filter%5Bcountry%5D%5B4%5D=Hungary&filter%5Bcountry%5D%5B5%5D=Italy&filter%5Bcountry%5D%5B6%5D=Norway&filter%5Bcountry%5D%5B7%5D=Poland&filter%5Bcountry%5D%5B8%5D=Romania&filter%5Bcountry%5D%5B9%5D=Spain&filter%5Bcountry%5D%5B10%5D=Switzerland"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "gevernova_jobs.db")
 
 # Country code mapper based on typical European ATS data

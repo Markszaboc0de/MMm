@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "thyssenkrupp"
 BASE_URL = "https://jobs.thyssenkrupp.com/hu?location=Magyarorsz%C3%A1g&lat=47.1817585&lng=19.5060937&placeId=512e36525b8f8133405990a2cedc43974740f00101f9015753000000000000c0020b92030748756e67617279&radius=0&entryLevel=Kezd%C5%91+szint+(0-2+%C3%A9v),Di%C3%A1kmunka,Gyakorlat+(hallgat%C3%B3k),Diplomamunka,Diplom%C3%A1s+gyakornoki+program,Du%C3%A1lis+k%C3%A9pz%C3%A9s"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "thyssenkrupp_jobs.db")
 
 

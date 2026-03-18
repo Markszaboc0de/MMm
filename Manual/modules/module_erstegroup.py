@@ -25,7 +25,7 @@ COMPANY_NAME = "Erste Group"
 # The URL with your pre-applied Job Level filters (Apprentice, Internship, Junior, Trainee)
 BASE_URL = "https://www.erstegroup.com/en/career/positions-offered#/joblist/level_of_experties/Apprentice%2CInternship%2CJunior%2CTrainee"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "erste_jobs.db")
 
 

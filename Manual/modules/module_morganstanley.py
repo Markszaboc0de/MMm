@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- CONFIGURATION ---
 COMPANY_NAME = "Morgan Stanley"
 BASE_URL = "https://www.morganstanley.com/careers/career-opportunities-search?opportunity=sg"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "morganstanley_jobs.db")
 
 

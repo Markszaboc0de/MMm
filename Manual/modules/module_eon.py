@@ -24,7 +24,7 @@ COMPANY_NAME = "E.ON"
 # Az URL a te előre beállított szűrőiddel
 BASE_URL = "https://jobs.eon.com/en?locale=hu_HU&filter=entryLevel_multi%3AApprentice%2CentryLevel_multi%3ADual+Student%2CentryLevel_multi%3AInternship%2CentryLevel_multi%3AWorking+Student%2CentryLevel_multi%3ATrainee%2CentryLevel_multi%3AFinal+Thesis"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "eon_jobs.db")
 
 

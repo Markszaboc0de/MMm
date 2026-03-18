@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "MOL_Group"
 BASE_URL = "https://molgroup.taleo.net/careersection/external/jobsearch.ftl?"
 DOMAIN_URL = "https://molgroup.taleo.net"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "mol_jobs.db")
 
 

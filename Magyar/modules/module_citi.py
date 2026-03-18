@@ -22,7 +22,7 @@ COMPANY_NAME = "Citi"
 # Megjegyzés: Ez az URL a globális kereső. Ha csak a magyar állások kellenek,
 # érdemes lehet a böngészőből kimásolni a szűrt linket (pl. .../search-jobs/Hungary/...)
 BASE_URL = "https://jobs.citi.com/search-jobs"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "citi_jobs.db")
 
 

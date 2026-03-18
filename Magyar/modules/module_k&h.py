@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "K&H Bank"
 # A megadott szűrt URL (szakmai gyakorlat / pályakezdő)
 BASE_URL = "https://karrier.kh.hu/allasok?q=ZXhwZXJpZW5jZXMlNUIlNUQlM0RwJUMzJUExbHlha2V6ZCVDNSU5MSUyNmV4cGVyaWVuY2VzJTVCJTVEJTNEcCVDMyVBMWx5YWtlemQlQzUlOTElMkMlMjBzemFrbWFpJTIwZ3lha29ybGF0dGFsJTI2ZXhwZXJpZW5jZXMlNUIlNUQlM0RzemFrbWFpJTIwZ3lha29ybGF0JTI2#!"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "kh_jobs.db")
 
 

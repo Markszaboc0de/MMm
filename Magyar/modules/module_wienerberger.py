@@ -25,7 +25,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Wienerberger"
 BASE_URL = "https://wienerberger.hrmaster.hu/DataCenter/Registration/JobAdvertisements/wienerberger"
 DOMAIN_URL = "https://wienerberger.hrmaster.hu"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "wienerberger_jobs.db")
 CHROME_VERSION = 145
 

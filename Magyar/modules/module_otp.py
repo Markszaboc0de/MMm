@@ -22,7 +22,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "OTP_Bank"
 BASE_URL = "https://karrier.otpbank.hu/go/Minden-allasajanlat/1167001/"
 DOMAIN_URL = "https://karrier.otpbank.hu"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "otp_jobs.db")
 
 

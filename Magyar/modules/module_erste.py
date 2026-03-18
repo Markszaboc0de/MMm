@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Erste Bank"
 # A szűrt URL (1-3 év tapasztalat, Gyakornok/Pályakezdő)
 BASE_URL = "https://karrier.erstebank.hu/allasok?q=ZXhwZXJpZW5jZXMlNUIlNUQlM0QxLTMlMjAlQzMlQTl2JTI2ZXhwZXJpZW5jZXMlNUIlNUQlM0RHeWFrb3Jub2slMjAlMkYlMjBwJUMzJUExbHlha2V6ZCVDNSU5MSUyNguuzzuuzz=#!"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "erste_jobs.db")
 
 

@@ -7,7 +7,7 @@ COMPANY_NAME = "E.ON"
 # Ezt az URL-t most tisztán, paraméterek nélkül használjuk, a Payload-ot külön adjuk át
 API_URL = "https://v09fm4cjghdr23p7p.a1.typesense.net/multi_search"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "eon_jobs.db")
 
 

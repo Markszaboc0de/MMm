@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Coloplast"
 # Keresési alap URL (A Magyarországra szűrt lista)
 BASE_URL = "https://careers.coloplast.com/search/?createNewAlert=false&q=&locationsearch=Hungary"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "coloplast_jobs.db")
 
 

@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Magyar Suzuki"
 # Az új, stabil alap URL, ami nem akad ki a böngésző megnyitásakor
 BASE_URL = "https://karrier.suzuki.hu/nyitott-poziciok"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "suzuki_jobs.db")
 
 

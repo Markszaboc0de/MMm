@@ -22,7 +22,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Citi"
 BASE_URL = "https://jobs.citi.com/search-jobs"
 DOMAIN_URL = "https://jobs.citi.com"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "citi_jobs.db")
 
 

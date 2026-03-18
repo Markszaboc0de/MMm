@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "CIB_Bank"
 BASE_URL = "https://jobs.intesasanpaolo.com/go/Jobs-CIB_HU/9669601/?locale=hu_HU&previewCategory=true&referrerSave=false"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "cib_jobs.db")
 
 

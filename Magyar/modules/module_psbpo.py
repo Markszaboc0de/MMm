@@ -15,7 +15,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Process Solutions (PS BPO)"
 BASE_URL = "https://career.ps-bpo.com/csatlakozz-hozzank/"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "psbpo_jobs.db")
 
 

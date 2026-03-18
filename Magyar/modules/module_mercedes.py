@@ -25,7 +25,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 COMPANY_NAME = "Mercedes-Benz"
 BASE_URL = "https://gyar.mercedes-benz.hu/karrier/gyakornoki-program"
 
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "mercedes_jobs.db")
 
 

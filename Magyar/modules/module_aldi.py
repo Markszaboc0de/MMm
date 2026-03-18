@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "ALDI"
 BASE_URL = "https://karrier.aldi.hu/allaskereso?query=&location=&careerLevels[]=26&sortBy=SORT_BY_TITLE_ASCENDING"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "aldi_jobs.db")
 
 
