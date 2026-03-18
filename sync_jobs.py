@@ -1,8 +1,8 @@
 """
 This script synchronizes scraped jobs from the local `raw_db` 
-to the destination `jobs_db` (either remote on VM1 or local duplicate).
+to the destination `job_match_db` (VM1) into a staging table `scraped_jobs`.
 
-It uses "UPSERT" logic so it's safe to run repeatedly. New jobs 
+It uses "UPSERT" logic via a temp table so it's safe to run repeatedly. New jobs 
 are inserted, and existing jobs (matched by URL) are updated.
 
 Usage:
@@ -34,7 +34,7 @@ DEST_PASS = os.getenv("DEST_PG_PASSWORD", "Mindenszarhoz")
 
 # Table Names
 SRC_TABLE  = "scraped_jobs"
-DEST_TABLE = "job_descriptions" # Automatically insert into the real dataset
+DEST_TABLE = "scraped_jobs" # The user created a new table for this
 
 def sync_databases():
     print(f"🔄 Starting database sync from {SRC_DB} to {DEST_DB}...")
@@ -59,70 +59,78 @@ def sync_databases():
         dest_cursor = dest_conn.cursor()
         print("✅ Connected to Destination.")
 
+        # 3. Create destination table if it doesn't exist (matching raw_db schema)
+        dest_cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS {DEST_TABLE} (
+                "ID" SERIAL PRIMARY KEY,
+                "Company" TEXT,
+                "Job Title" TEXT,
+                "City" TEXT,
+                "Country" TEXT,
+                "Job Description" TEXT,
+                "URL" TEXT,
+                "Date" TEXT
+            );
+        ''')
+        dest_conn.commit()
+
         # 4. Read all data from source
         print("📥 Reading data from source database...")
-        # Only select the columns we need for job_descriptions
-        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
-        raw_rows = src_cursor.fetchall()
+        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL", "Date" FROM {SRC_TABLE}')
+        rows = src_cursor.fetchall()
         
-        if not raw_rows:
+        if not rows:
             print("⚠️ No data found in source database.")
             return
 
-        # Map strictly to destination schema
-        # jd_id SERIAL PRIMARY KEY, company, title, city, country, raw_text, url, employer_id
-        formatted_rows = []
-        for row in raw_rows:
-            c_company, c_title, c_city, c_country, c_raw_text, c_url = row
-            employer_id = None # employer_id expects an integer, but we still save c_company in the 'company' column!
-            formatted_rows.append((c_company, c_title, c_city, c_country, c_raw_text, c_url, employer_id))
-
-        print(f"📤 Preparing to sync {len(formatted_rows)} rows to destination database...")
+        print(f"📤 Preparing to sync {len(rows)} rows to destination database...")
 
         # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
         dest_cursor.execute('''
             CREATE TEMP TABLE temp_sync (
-                company TEXT,
-                title TEXT,
-                city TEXT,
-                country TEXT,
-                raw_text TEXT,
-                url TEXT,
-                employer_id INTEGER
+                "Company" TEXT,
+                "Job Title" TEXT,
+                "City" TEXT,
+                "Country" TEXT,
+                "Job Description" TEXT,
+                "URL" TEXT,
+                "Date" TEXT
             ) ON COMMIT DROP;
         ''')
 
         execute_values(
             dest_cursor,
-            "INSERT INTO temp_sync (company, title, city, country, raw_text, url, employer_id) VALUES %s",
-            formatted_rows
+            '''INSERT INTO temp_sync ("Company", "Job Title", "City", "Country", "Job Description", "URL", "Date") 
+               VALUES %s''',
+            rows
         )
 
         # Update existing records
         dest_cursor.execute(f'''
             UPDATE {DEST_TABLE} j
-            SET company = t.company,
-                title = t.title,
-                city = t.city,
-                country = t.country,
-                raw_text = t.raw_text
+            SET "Company" = t."Company",
+                "Job Title" = t."Job Title",
+                "City" = t."City",
+                "Country" = t."Country",
+                "Job Description" = t."Job Description",
+                "Date" = t."Date"
             FROM temp_sync t
-            WHERE j.url = t.url;
+            WHERE j."URL" = t."URL";
         ''')
 
         # Insert new records
         dest_cursor.execute(f'''
-            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url, employer_id)
-            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url, t.employer_id
+            INSERT INTO {DEST_TABLE} ("Company", "Job Title", "City", "Country", "Job Description", "URL", "Date")
+            SELECT t."Company", t."Job Title", t."City", t."Country", t."Job Description", t."URL", t."Date"
             FROM temp_sync t
             WHERE NOT EXISTS (
-                SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
+                SELECT 1 FROM {DEST_TABLE} j WHERE j."URL" = t."URL"
             );
         ''')
         
         dest_conn.commit()
 
-        print(f"✅ Successfully synchronized {len(formatted_rows)} jobs to {DEST_DB} at {DEST_HOST}!")
+        print(f"✅ Successfully synchronized {len(rows)} jobs to {DEST_DB} ({DEST_TABLE} table) at {DEST_HOST}!")
 
     except Exception as e:
         print(f"❌ Error during synchronization: {e}")
