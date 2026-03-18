@@ -12,13 +12,13 @@ import sys
 # ==========================================
 # ⚙️ CONFIGURATION FOR VM1 SSH
 # ==========================================
-VM1_IP = "192.168.1.151"
+VM1_IP = "10.0.0.74"
 VM1_USER = "ubuntu"  # Replace with the actual SSH username on VM1 (e.g., ubuntu, opc, etc.)
 
 # The command to run on VM1. You may need to activate a virtual environment first,
 # and specify the full path to recalculate.py.
 # Example: "cd /home/ubuntu/Resumatch && source venv/bin/activate && python recalculate.py"
-RECALCULATE_COMMAND = "cd /home/ubuntu/Resumatch_OCI/recalculate.PY"
+RECALCULATE_COMMAND = "cd /home/ubuntu/Resumatch_OCI && python recalculate.py"
 
 
 def main():
