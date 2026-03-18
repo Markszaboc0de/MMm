@@ -1,9 +1,6 @@
 import os
 import subprocess
 import sys
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 def run_script(script_path, cwd):
     print(f"--- Running {script_path} in {cwd} ---")
@@ -14,37 +11,25 @@ def run_script(script_path, cwd):
     except subprocess.CalledProcessError as e:
         print(f"--- Error running {script_path} (Exit code: {e.returncode}) ---\n")
 
-def send_email_notification():
-    sender_email = os.getenv("SENDER_EMAIL")
-    sender_password = os.getenv("SENDER_PASSWORD") # e.g., Gmail App Password
-    recipient_email = os.getenv("RECIPIENT_EMAIL")
+import urllib.request
 
-    if not sender_email or not sender_password or not recipient_email:
-        print("\n⚠️ Email credentials not found in environment variables. Skipping email notification.")
-        print("To enable, set SENDER_EMAIL, SENDER_PASSWORD (App Password), and RECIPIENT_EMAIL.")
-        return
-
-    print(f"\n📧 Sending completion email to {recipient_email}...")
-    subject = "✅ Scrapers Finished Running!"
-    body = "The run_all_scrapers.py script has completed executing all attached scraper modules safely."
-
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = recipient_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
+def send_notification():
     try:
-        # Connect to Gmail's SMTP server (Change host/port if using Outlook/Yahoo)
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        text = msg.as_string()
-        server.sendmail(sender_email, recipient_email, text)
-        server.quit()
-        print(f"✅ Notification email successfully sent!")
+        # A unique topic name for your scraper notifications
+        topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
+        
+        req = urllib.request.Request(
+            topic_url,
+            data="✅ All structured scrapers have completed executing!".encode('utf-8'),
+            headers={
+                "Title": "Resumatch Scraper 🤖",
+                "Tags": "white_check_mark,robot"
+            }
+        )
+        urllib.request.urlopen(req, timeout=5)
+        print("📲 Push notification sent to your phone/browser!")
     except Exception as e:
-        print(f"❌ Failed to send email notification: {e}")
+        print(f"Failed to send push notification: {e}")
 
 def main():
     # Base directory of this script (Magyar-Manual-main)
@@ -70,9 +55,7 @@ def main():
         run_script(script_path, cwd)
 
     print("All structured scrapers have completed executing.")
-    
-    # Trigger the email notification
-    send_email_notification()
+    send_notification()
 
 if __name__ == "__main__":
     main()
