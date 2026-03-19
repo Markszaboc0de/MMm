@@ -93,10 +93,85 @@ def extract_first_job(db_path):
     
     return None
 
-def main():
-    print("🚀 Starting Specialized Scraper Health Check\n")
+import threading
+import concurrent.futures
+
+def run_test(target, module, csv_lock):
+    """Executes a single scraper test in an isolated thread context."""
+    module_path = os.path.join(target["modules_path"], module)
+    print(f"▶️ Testing [{target['name']}] -> {module}")
     
-    # Initialize the results CSV
+    start_time = time.time()
+    job_found = None
+    
+    # Heuristically determine what the db file might be named
+    base_name = module.replace("module_", "").replace("scrape_", "").replace(".py", "").lower()
+    
+    try:
+        process = subprocess.Popen(
+            [sys.executable, module_path],
+            cwd=target["cwd"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        
+        while True:
+            elapsed = time.time() - start_time
+            if elapsed > TIMEOUT_SECONDS:
+                print(f"   ⏰ TIMEOUT ({TIMEOUT_SECONDS}s) for {module}. Killing process.")
+                process.terminate()
+                break
+                
+            db_files = glob.glob(os.path.join(target["data_path"], "*.db")) + glob.glob(os.path.join(target["data_path"], "*.sqlite"))
+            
+            for db_file in db_files:
+                # Thread Safety: Only read from a db file if its name roughly matches our module
+                if base_name in os.path.basename(db_file).lower():
+                    job_found = extract_first_job(db_file)
+                    if job_found:
+                        break
+                        
+            if job_found:
+                print(f"   🎯 BINGO! Got 1 job for {module} at {elapsed:.1f}s!")
+                process.terminate()
+                break
+                
+            if process.poll() is not None:
+                print(f"   ❌ Process {module} exited prematurely without finding jobs.")
+                break
+                
+            time.sleep(1)
+            
+    except Exception as e:
+        print(f"   ❌ Error starting process {module}: {e}")
+        
+    try:
+        process.kill()
+    except:
+        pass
+        
+    # Log results thread-safely
+    with csv_lock:
+        with open(RESULTS_CSV, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if job_found:
+                writer.writerow([
+                    target["name"], 
+                    module, 
+                    "SUCCESS", 
+                    job_found.get("company", ""), 
+                    job_found.get("job_title", ""), 
+                    job_found.get("url", ""), 
+                    f"{time.time() - start_time:.1f}"
+                ])
+                return True
+            else:
+                writer.writerow([target["name"], module, "FAILED/TIMEOUT", "", "", "", f"{time.time() - start_time:.1f}"])
+                return False
+
+def main():
+    print("🚀 Starting Specialized Scraper Health Check (PARALLEL MODE)\n")
+    
     with open(RESULTS_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(["Module Category", "Module Name", "Status", "Company Scraped", "Job Title Scraped", "URL", "Time Taken (s)"])
@@ -104,97 +179,41 @@ def main():
     total_scrapers = 0
     successful_scrapers = 0
     failed_scrapers = []
+    
+    # Pre-clean all data folders once
+    for target in TARGETS:
+        clean_data_folder(target["data_path"])
 
+    csv_lock = threading.Lock()
+    
+    tasks = []
     for target in TARGETS:
         if not os.path.exists(target["modules_path"]):
             continue
-            
         modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__')])
-        
         for module in modules:
-            total_scrapers += 1
-            module_path = os.path.join(target["modules_path"], module)
-            print(f"\n▶️ Testing [{target['name']}] -> {module}")
+            tasks.append((target, module))
             
-            # Clean databases before starting
-            clean_data_folder(target["data_path"])
-            
-            start_time = time.time()
-            job_found = None
-            
-            # Launch scraper silently
+    total_scrapers = len(tasks)
+    
+    # Execute 5 scrapers simultaneously!
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
+        
+        for future in concurrent.futures.as_completed(futures):
+            t, m = futures[future]
             try:
-                process = subprocess.Popen(
-                    [sys.executable, module_path],
-                    cwd=target["cwd"],
-                    stdout=subprocess.DEVNULL,  # Hide normal output
-                    stderr=subprocess.DEVNULL
-                )
-                
-                # Monitor data folder
-                while True:
-                    elapsed = time.time() - start_time
-                    
-                    if elapsed > TIMEOUT_SECONDS:
-                        print(f"   ⏰ TIMEOUT ({TIMEOUT_SECONDS}s). Killing process.")
-                        process.terminate()
-                        break
-                        
-                    # Did process crash/exit early without creating db?
-                    if process.poll() is not None:
-                        # Process finished. Final check on DB.
-                        pass # proceed to check DB one last time below
-                    
-                    # Scan for sqlite files
-                    db_files = glob.glob(os.path.join(target["data_path"], "*.db")) + glob.glob(os.path.join(target["data_path"], "*.sqlite"))
-                    
-                    for db_file in db_files:
-                        job_found = extract_first_job(db_file)
-                        if job_found:
-                            break
-                            
-                    if job_found:
-                        print(f"   🎯 BINGO! Got exactly 1 job. Snipping process at {elapsed:.1f}s!")
-                        process.terminate()
-                        break
-                        
-                    if process.poll() is not None:
-                        print(f"   ❌ Process exited prematurely without saving any viable jobs (Code {process.returncode}).")
-                        break
-                        
-                    time.sleep(1) # Poll interval
-                    
-            except Exception as e:
-                print(f"   ❌ Error starting process: {e}")
-                
-            # Log results
-            with open(RESULTS_CSV, 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                if job_found:
-                    writer.writerow([
-                        target["name"], 
-                        module, 
-                        "SUCCESS", 
-                        job_found.get("company", ""), 
-                        job_found.get("job_title", ""), 
-                        job_found.get("url", ""), 
-                        f"{time.time() - start_time:.1f}"
-                    ])
+                success = future.result()
+                if success:
                     successful_scrapers += 1
                 else:
-                    writer.writerow([target["name"], module, "FAILED/TIMEOUT", "", "", "", f"{time.time() - start_time:.1f}"])
-                    failed_scrapers.append(f"[{target['name']}] {module}")
-                    
-            # Ensure process is dead
-            try:
-                process.kill()
-            except:
-                pass
-                
-            time.sleep(2) # Cooldown before next scraper
+                    failed_scrapers.append(f"[{t['name']}] {m}")
+            except Exception as exc:
+                print(f"   ❌ Thread crash for {m}: {exc}")
+                failed_scrapers.append(f"[{t['name']}] {m}")
 
     print("\n" + "="*50)
-    print("🏁 HEALTH CHECK COMPLETE")
+    print("🏁 MULTI-THREADED HEALTH CHECK COMPLETE")
     print("="*50)
     print(f"✅ Successful: {successful_scrapers}/{total_scrapers}")
     if failed_scrapers:
