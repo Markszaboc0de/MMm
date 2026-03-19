@@ -95,6 +95,24 @@ def extract_first_job(db_path):
 
 import threading
 import concurrent.futures
+import urllib.request
+
+def send_notification(successful, total):
+    try:
+        topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
+        message = f"✅ Scraper Health Check Complete!\n{successful}/{total} modules successfully scraped a validation job."
+        req = urllib.request.Request(
+            topic_url,
+            data=message.encode('utf-8'),
+            headers={
+                "Title": "Resumatch Tester",
+                "Tags": "mag,robot"
+            }
+        )
+        urllib.request.urlopen(req, timeout=5)
+        print("📲 Push notification sent!")
+    except Exception as e:
+        pass
 
 def run_test(target, module, csv_lock):
     """Executes a single scraper test in an isolated thread context."""
@@ -221,6 +239,8 @@ def main():
         for fail in failed_scrapers:
             print(f"  - {fail}")
     print(f"\n📂 A detailed report has been saved to: {RESULTS_CSV}")
+    
+    send_notification(successful_scrapers, total_scrapers)
 
 if __name__ == "__main__":
     main()
