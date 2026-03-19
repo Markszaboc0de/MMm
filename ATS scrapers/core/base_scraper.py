@@ -15,6 +15,8 @@ class BaseScraper:
     def _setup_driver(self):
         # Silent initialization
         options = Options()
+        options.page_load_strategy = 'eager'
+        options.add_argument("--blink-settings=imagesEnabled=false")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-blink-features=AutomationControlled")
