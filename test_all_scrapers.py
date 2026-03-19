@@ -34,7 +34,6 @@ TARGETS = [
 
 TIMEOUT_SECONDS = 180  # 3 minutes max per scraper
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
-import postgres_export
 
 def clean_data_folder(data_path):
     """Deletes all .db and .sqlite files in the targeted data directory."""
@@ -181,11 +180,6 @@ def main():
                         job_found.get("url", ""), 
                         f"{time.time() - start_time:.1f}"
                     ])
-                    # Push this single job to Postgres for verification testing
-                    try:
-                        postgres_export.push_to_postgres([job_found])
-                    except:
-                        pass
                     successful_scrapers += 1
                 else:
                     writer.writerow([target["name"], module, "FAILED/TIMEOUT", "", "", "", f"{time.time() - start_time:.1f}"])
