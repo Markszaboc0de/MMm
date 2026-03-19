@@ -13,6 +13,10 @@ import os
 import sys
 import psycopg2
 from psycopg2.extras import execute_values
+from dotenv import load_dotenv
+
+# Load environment variables securely from .env
+load_dotenv()
 
 # ==========================================
 # ⚙️ CONFIGURATION
@@ -23,14 +27,17 @@ SRC_HOST = os.getenv("SRC_PG_HOST", "localhost")
 SRC_PORT = os.getenv("SRC_PG_PORT", "5432")
 SRC_DB   = os.getenv("SRC_PG_DATABASE", "raw_db")
 SRC_USER = os.getenv("SRC_PG_USER", "postgres")
-SRC_PASS = os.getenv("SRC_PG_PASSWORD", "postgres")
+SRC_PASS = os.getenv("SRC_PG_PASSWORD") # NO HARDCODED PASSWORDS
 
 # TARGET Database (the main app database on VM1)
 DEST_HOST = os.getenv("DEST_PG_HOST", "10.0.0.74")
 DEST_PORT = os.getenv("DEST_PG_PORT", "5432")
 DEST_DB   = os.getenv("DEST_PG_DATABASE", "job_match_db")
 DEST_USER = os.getenv("DEST_PG_USER", "app_user")
-DEST_PASS = os.getenv("DEST_PG_PASSWORD", "Mindenszarhoz")
+DEST_PASS = os.getenv("DEST_PG_PASSWORD")
+
+if not SRC_PASS or not DEST_PASS:
+    raise ValueError("Critical Security Error: Both SRC_PG_PASSWORD and DEST_PG_PASSWORD must be set in your .env file!")
 
 # Table Names
 SRC_TABLE  = "scraped_jobs"

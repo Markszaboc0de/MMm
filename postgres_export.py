@@ -1,13 +1,21 @@
 import psycopg2
 from psycopg2.extras import execute_values
 import os
+from dotenv import load_dotenv
 
-# Database connection defaults. User can override via environment variables.
+# Load environment variables from a .env file
+load_dotenv()
+
+# Database connection details (NO hardcoded passwords!)
 DB_HOST = os.getenv("PG_HOST", "localhost")
 DB_PORT = os.getenv("PG_PORT", "5432")
 DB_NAME = os.getenv("PG_DATABASE", "raw_db")
 DB_USER = os.getenv("PG_USER", "postgres")
-DB_PASSWORD = os.getenv("PG_PASSWORD", "postgres")
+# Do not provide a default password string in source code!
+DB_PASSWORD = os.getenv("PG_PASSWORD")
+
+if not DB_PASSWORD:
+    raise ValueError("Critical Security Error: PG_PASSWORD environment variable is not set! Please configure your .env file.")
 
 def get_connection():
     """Returns a connection to the PostgreSQL database."""
