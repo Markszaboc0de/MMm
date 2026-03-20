@@ -38,6 +38,8 @@ def send_notification(runtime_seconds):
     except Exception as e:
         print(f"Failed to send push notification: {e}")
 
+import concurrent.futures
+
 def main():
     # Base directory of this script (Magyar-Manual-main)
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,17 +52,22 @@ def main():
     ]
 
     start_time = time.time()
-    for item in scripts_to_run:
-        script_path = item["script"]
-        cwd = item["cwd"]
-        
-        # Check if the directory and script exist before running
-        full_script_path = os.path.join(cwd, script_path)
-        if not os.path.exists(full_script_path):
-            print(f"Error: Script not found at {full_script_path}")
-            continue
+    
+    # Run the 3 main scraper categories in parallel (3 workers)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = []
+        for item in scripts_to_run:
+            script_path = item["script"]
+            cwd = item["cwd"]
+            full_script_path = os.path.join(cwd, script_path)
             
-        run_script(script_path, cwd)
+            if os.path.exists(full_script_path):
+                futures.append(executor.submit(run_script, script_path, cwd))
+            else:
+                print(f"Error: Script not found at {full_script_path}")
+        
+        # Wait for all to complete
+        concurrent.futures.wait(futures)
 
     total_time = time.time() - start_time
     print(f"All structured scrapers have completed executing. (Took {total_time:.1f}s)")
