@@ -100,7 +100,7 @@ import urllib.request
 def send_notification(successful, total):
     try:
         topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
-        message = f"✅ Scraper Health Check Complete!\n{successful}/{total} modules successfully scraped a validation job."
+        message = f"Scraper Health Check Complete!\n{successful}/{total} modules successfully scraped a validation job."
         req = urllib.request.Request(
             topic_url,
             data=message.encode('utf-8'),

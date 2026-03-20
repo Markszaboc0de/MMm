@@ -20,7 +20,7 @@ def send_notification():
         
         req = urllib.request.Request(
             topic_url,
-            data="✅ All structured scrapers have completed executing!".encode('utf-8'),
+            data="All structured scrapers have completed executing!".encode('utf-8'),
             headers={
                 "Title": "Resumatch Scraper",
                 "Tags": "white_check_mark,robot"
