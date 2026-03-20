@@ -67,9 +67,22 @@ def get_chrome_driver() -> webdriver.Chrome:
         "/usr/lib/chromium/chromedriver",
     ]
     chromedriver_path = _find_binary(driver_candidates)
+    using_snap = chromedriver_path and chromedriver_path.startswith("/snap/")
+
+    if using_snap:
+        # When using snap chromedriver, do NOT set binary_location.
+        # The snap wrapper finds its paired browser via confinement automatically.
+        # Setting binary_location to the snap wrapper breaks session creation.
+        print(f"   🔧 Using snap ChromeDriver (auto-paired): {chromedriver_path}")
+        # Also use legacy headless flag — more stable on ARM snap builds
+        options.arguments[:] = [
+            a.replace("--headless=new", "--headless") for a in options.arguments
+        ]
+    elif chrome_binary:
+        options.binary_location = chrome_binary
+        print(f"   🔍 Using Chrome Binary: {chrome_binary}")
 
     if chromedriver_path:
-        print(f"   🔧 Using native ChromeDriver: {chromedriver_path}")
         service = Service(executable_path=chromedriver_path)
     else:
         # Only fall back to webdriver_manager if no native driver found.
