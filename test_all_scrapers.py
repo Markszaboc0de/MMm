@@ -287,9 +287,9 @@ def main():
             
     total_scrapers = len(tasks)
     
-    # Use 1 worker to ensure only one Chrome instance runs at a time on the VM.
-    # Chrome is memory-heavy; 3 concurrent instances caused the OOM crash.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    # 5 workers: safe now because HEALTH_CHECK_MODE keeps Chrome short-lived (1 job each).
+    # Non-Selenium scrapers are very lightweight so 5 concurrent is fine.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):
