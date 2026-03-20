@@ -192,7 +192,7 @@ def run_scraper():
             pass
         time.sleep(2)
 
-        driver = create_driver()
+        driver = get_chrome_driver()
         wait = WebDriverWait(driver, 10)
 
         # --- 2. FÁZIS: RÉSZLETEK ÉS LOKÁCIÓK KINYERÉSE ---
@@ -220,7 +220,7 @@ def run_scraper():
                     except Exception:
                         pass
                     time.sleep(2)
-                    driver = create_driver()
+                    driver = get_chrome_driver()
                     wait = WebDriverWait(driver, 10)
                     driver.get(job['url'])
 
