@@ -1,4 +1,3 @@
-from core.base_scraper import BaseScraper
 import os
 import sys
 import re
@@ -10,8 +9,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 # Ensure Python can find the 'core' module and the root driver_setup
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(root_dir)
+# This MUST happen before importing core or driver_setup
+_ats_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # ATS scrapers/
+_root_dir = os.path.dirname(_ats_dir)                                    # project root
+for _p in [_ats_dir, _root_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from core.base_scraper import BaseScraper
 from driver_setup import get_chrome_driver
 
 # --- CONFIGURATION ---

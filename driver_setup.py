@@ -56,22 +56,36 @@ def get_chrome_driver() -> webdriver.Chrome:
         options.binary_location = chrome_binary
         print(f"   🔍 Using Chrome Binary: {chrome_binary}")
 
-    try:
-        # Determine if we should use Chromium vs Google Chrome for manager
-        chrome_type = ChromeType.CHROMIUM if (chrome_binary and "chrom" in chrome_binary.lower()) else ChromeType.GOOGLE
-        driver_path = ChromeDriverManager(chrome_type=chrome_type).install()
-        service = Service(executable_path=driver_path)
-    except Exception as e:
-        print(f"   ⚠️ WebDriverManager failed ({e}), searching for local drivers...")
-        driver_candidates = [
-            shutil.which("chromedriver"),
-            "/usr/bin/chromedriver",
-            "/usr/lib/chromium-browser/chromedriver",
-            "/snap/bin/chromium.chromedriver",
-        ]
-        chromedriver_path = _find_binary(driver_candidates)
-        if not chromedriver_path:
-             raise RuntimeError(f"chromedriver not found and manager failed. Error: {e}")
+    # IMPORTANT: On ARM64 VMs (e.g. Oracle Cloud), webdriver_manager downloads
+    # an x86_64 binary that fails with "Exec format error". Always prefer a
+    # native system/snap chromedriver that matches the machine architecture.
+    driver_candidates = [
+        "/snap/bin/chromium.chromedriver",           # Snap Chromium (ARM64 + x86)
+        shutil.which("chromedriver"),                # System PATH
+        "/usr/bin/chromedriver",
+        "/usr/lib/chromium-browser/chromedriver",
+        "/usr/lib/chromium/chromedriver",
+    ]
+    chromedriver_path = _find_binary(driver_candidates)
+
+    if chromedriver_path:
+        print(f"   🔧 Using native ChromeDriver: {chromedriver_path}")
         service = Service(executable_path=chromedriver_path)
+    else:
+        # Only fall back to webdriver_manager if no native driver found.
+        # This may fail on ARM64 if the downloaded binary is wrong architecture.
+        print("   ⚠️ No native chromedriver found, trying webdriver_manager...")
+        try:
+            chrome_type = ChromeType.CHROMIUM if (chrome_binary and "chrom" in chrome_binary.lower()) else ChromeType.GOOGLE
+            driver_path = ChromeDriverManager(chrome_type=chrome_type).install()
+            service = Service(executable_path=driver_path)
+        except Exception as e:
+            raise RuntimeError(
+                f"chromedriver not found. On Ubuntu/ARM run:\n"
+                f"  sudo snap install chromium  (includes chromedriver)\n"
+                f"  -- or --\n"
+                f"  sudo apt install chromium-browser chromium-chromedriver\n"
+                f"Manager error: {e}"
+            )
 
     return webdriver.Chrome(service=service, options=options)
