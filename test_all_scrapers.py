@@ -96,6 +96,24 @@ def extract_first_job(db_path):
 import threading
 import concurrent.futures
 import urllib.request
+import re
+
+def get_expected_db_filename(module_path):
+    try:
+        with open(module_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        m1 = re.search(r'DB_PATH\s*=\s*.*?["\']([^"\']+\.(?:db|sqlite))["\']', content)
+        if m1: return os.path.basename(m1.group(1)).lower()
+        
+        m2 = re.search(r'db_filename\s*=\s*["\'].*?([^/"\']+\.(?:db|sqlite))["\']', content)
+        if m2: return os.path.basename(m2.group(1)).lower()
+
+        m3 = re.search(r'sqlite3\.connect\(\s*["\']([^"\']+\.(?:db|sqlite))["\']', content)
+        if m3: return os.path.basename(m3.group(1)).lower()
+    except:
+        pass
+    return None
 
 def send_notification(successful, total):
     try:
@@ -122,7 +140,8 @@ def run_test(target, module, csv_lock):
     start_time = time.time()
     job_found = None
     
-    # Heuristically determine what the db file might be named
+    # Safely extract the exact database filename from the python source code!
+    expected_db = get_expected_db_filename(module_path)
     base_name = module.replace("module_", "").replace("scrape_", "").replace(".py", "").lower()
     
     try:
@@ -143,8 +162,9 @@ def run_test(target, module, csv_lock):
             db_files = glob.glob(os.path.join(target["data_path"], "*.db")) + glob.glob(os.path.join(target["data_path"], "*.sqlite"))
             
             for db_file in db_files:
-                # Thread Safety: Only read from a db file if its name roughly matches our module
-                if base_name in os.path.basename(db_file).lower():
+                actual_name = os.path.basename(db_file).lower()
+                # Thread Safety: Only read from a db file if its name exactly matches the expected DB_PATH
+                if (expected_db and expected_db == actual_name) or (not expected_db and base_name in actual_name):
                     job_found = extract_first_job(db_file)
                     if job_found:
                         break
