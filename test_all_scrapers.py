@@ -32,9 +32,7 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 300  # 5 minutes per scraper
-# Scripts to exclude from the test scan (utility scripts, not scrapers)
-EXCLUDE_SCRIPTS = {"extract!!.py", "extract.py", "run_all.py", "base_scraper.py"}
+TIMEOUT_SECONDS = 300  # Increased to 5 minutes for slow VM performance
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
 
 def clean_data_folder(data_path):
@@ -243,12 +241,10 @@ def run_test(target, module, csv_lock):
                 ])
                 return True
             else:
-                # Log errors for debugging with category namespacing to avoid collisions
+                # Log errors for debugging
                 log_dir = os.path.join(BASE_DIR, "logs")
                 os.makedirs(log_dir, exist_ok=True)
-                log_filename = f"{target['name']}_{module}.log"
-                with open(os.path.join(log_dir, log_filename), "w", encoding='utf-8') as log_file:
-                    log_file.write(f"--- FAILED MODULE: {target['name']}/{module} ---\n")
+                with open(os.path.join(log_dir, f"{module}.log"), "w", encoding='utf-8') as log_file:
                     log_file.write("--- STDOUT ---\n")
                     log_file.writelines(stdout_data)
                     log_file.write("\n--- STDERR ---\n")
@@ -279,14 +275,14 @@ def main():
     for target in TARGETS:
         if not os.path.exists(target["modules_path"]):
             continue
-        modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__') and f not in EXCLUDE_SCRIPTS])
+        modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__')])
         for module in modules:
             tasks.append((target, module))
             
     total_scrapers = len(tasks)
     
-    # 5 parallel workers as requested
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    # Execute 3 scrapers simultaneously to prevent CPU/RAM exhaustion on standard VMs
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):

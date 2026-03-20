@@ -43,7 +43,9 @@ def init_db():
     conn.close()
 
 
-# Using centralized get_chrome_driver instead of broken local create_driver
+def create_driver():
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    return webdriver.Chrome(options=options)
 
 
 def run_scraper():
@@ -51,7 +53,7 @@ def run_scraper():
     print(
         f"🚀 Starting {COMPANY_NAME} Scraper (JSON-LD Data Extraction Mode)...")
 
-    driver = get_chrome_driver()
+    driver = create_driver()
     job_links = []
     unique_urls = set()
 
@@ -155,7 +157,7 @@ def run_scraper():
             pass
         time.sleep(2)
 
-        driver = get_chrome_driver()
+        driver = create_driver()
         wait = WebDriverWait(driver, 10)
 
         # --- PHASE 2: DEEP SCRAPING VIA JSON-LD ---
@@ -181,7 +183,7 @@ def run_scraper():
                     except:
                         pass
                     time.sleep(2)
-                    driver = get_chrome_driver()
+                    driver = create_driver()
                     wait = WebDriverWait(driver, 10)
                     driver.get(job['url'])
 
