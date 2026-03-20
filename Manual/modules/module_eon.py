@@ -48,6 +48,7 @@ def run_scraper():
     init_db()
     print(f"🚀 {COMPANY_NAME} Scraper indítása (GE Aerospace várakozási logika, Tiszta DOM mód)...")
 
+    HEALTH_CHECK = os.environ.get("HEALTH_CHECK_MODE") == "1"
     driver = get_chrome_driver()
     job_links = []
     unique_urls = set()
@@ -126,6 +127,10 @@ def run_scraper():
                     f"\r   🔄 'Load More' kattintva {click_count} alkalommal... (Látható állások: ~{current_jobs})")
                 sys.stdout.flush()
 
+                if HEALTH_CHECK:
+                    print("\n⚡ HEALTH_CHECK_MODE: Load More loop kihagyva.")
+                    break
+
                 # Várjuk meg, amíg a kártyák száma megnő
                 for _ in range(15):
                     new_count = driver.execute_script(
@@ -199,7 +204,8 @@ def run_scraper():
         conn = sqlite3.connect(DB_PATH)
         saved_count = 0
 
-        for idx, job in enumerate(job_links, 1):
+        max_jobs = 1 if HEALTH_CHECK else len(job_links)
+        for idx, job in enumerate(job_links[:max_jobs], 1):
             try:
                 cursor = conn.cursor()
                 cursor.execute(

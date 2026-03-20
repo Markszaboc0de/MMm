@@ -51,6 +51,7 @@ def run_scraper():
     print(
         f"🚀 Starting {COMPANY_NAME} Scraper (JSON-LD Data Extraction Mode)...")
 
+    HEALTH_CHECK = os.environ.get("HEALTH_CHECK_MODE") == "1"
     driver = get_chrome_driver()
     job_links = []
     unique_urls = set()
@@ -108,6 +109,9 @@ def run_scraper():
                     f"\r   🔄 Clicked 'Load More' {click_count} times...")
                 sys.stdout.flush()
                 time.sleep(3)
+                if HEALTH_CHECK:
+                    print("\n⚡ HEALTH_CHECK_MODE: stopping after 1 Load More click.")
+                    break
             else:
                 print("\n🏁 List is fully expanded.")
                 break
@@ -162,7 +166,8 @@ def run_scraper():
         conn = sqlite3.connect(DB_PATH)
         saved_count = 0
 
-        for idx, job in enumerate(job_links, 1):
+        max_jobs = 1 if HEALTH_CHECK else len(job_links)
+        for idx, job in enumerate(job_links[:max_jobs], 1):
             try:
                 cursor = conn.cursor()
                 cursor.execute(

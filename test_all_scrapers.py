@@ -168,6 +168,8 @@ def run_test(target, module, csv_lock):
         # Ensure ATS scrapers can resolve `core.base_scraper` by adding their root to PYTHONPATH
         target_root = os.path.dirname(target["cwd"]) if "ATS" in target["cwd"] else target["cwd"]
         env["PYTHONPATH"] = f"{target_root}{os.pathsep}{BASE_DIR}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        # Tell scrapers they are running in health-check mode (save 1 job and exit)
+        env["HEALTH_CHECK_MODE"] = "1"
 
         process = subprocess.Popen(
             [sys.executable, module_path],
