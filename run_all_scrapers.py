@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import time
 
 def run_script(script_path, cwd):
     print(f"--- Running {script_path} in {cwd} ---")
@@ -13,14 +14,20 @@ def run_script(script_path, cwd):
 
 import urllib.request
 
-def send_notification():
+def send_notification(runtime_seconds):
     try:
         # A unique topic name for your scraper notifications
         topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
         
+        minutes = int(runtime_seconds // 60)
+        seconds = int(runtime_seconds % 60)
+        time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+
+        message = f"All structured scrapers have completed executing!\nTotal Runtime: {time_str}"
+        
         req = urllib.request.Request(
             topic_url,
-            data="All structured scrapers have completed executing!".encode('utf-8'),
+            data=message.encode('utf-8'),
             headers={
                 "Title": "Resumatch Scraper",
                 "Tags": "white_check_mark,robot"
@@ -42,6 +49,7 @@ def main():
         {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Manual")},
     ]
 
+    start_time = time.time()
     for item in scripts_to_run:
         script_path = item["script"]
         cwd = item["cwd"]
@@ -54,8 +62,9 @@ def main():
             
         run_script(script_path, cwd)
 
-    print("All structured scrapers have completed executing.")
-    send_notification()
+    total_time = time.time() - start_time
+    print(f"All structured scrapers have completed executing. (Took {total_time:.1f}s)")
+    send_notification(total_time)
 
 if __name__ == "__main__":
     main()

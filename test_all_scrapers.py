@@ -127,10 +127,15 @@ def get_expected_db_filename(module_path):
         pass
     return None
 
-def send_notification(successful, total):
+def send_notification(successful, total, runtime_seconds):
     try:
         topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
-        message = f"Scraper Health Check Complete!\n{successful}/{total} modules successfully scraped a validation job."
+        
+        minutes = int(runtime_seconds // 60)
+        seconds = int(runtime_seconds % 60)
+        time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+
+        message = f"Scraper Health Check Complete!\n{successful}/{total} modules successful.\nTotal Runtime: {time_str}"
         req = urllib.request.Request(
             topic_url,
             data=message.encode('utf-8'),
@@ -250,6 +255,7 @@ def run_test(target, module, csv_lock):
 
 def main():
     print("🚀 Starting Specialized Scraper Health Check (PARALLEL MODE)\n")
+    start_time_all = time.time()
     
     with open(RESULTS_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -291,6 +297,7 @@ def main():
                 print(f"   ❌ Thread crash for {m}: {exc}")
                 failed_scrapers.append(f"[{t['name']}] {m}")
 
+    total_time_all = time.time() - start_time_all
     print("\n" + "="*50)
     print("🏁 MULTI-THREADED HEALTH CHECK COMPLETE")
     print("="*50)
@@ -300,8 +307,9 @@ def main():
         for fail in failed_scrapers:
             print(f"  - {fail}")
     print(f"\n📂 A detailed report has been saved to: {RESULTS_CSV}")
+    print(f"⏱️ Total Runtime: {total_time_all:.1f}s")
     
-    send_notification(successful_scrapers, total_scrapers)
+    send_notification(successful_scrapers, total_scrapers, total_time_all)
 
 if __name__ == "__main__":
     main()
