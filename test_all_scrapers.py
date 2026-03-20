@@ -32,7 +32,7 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 300  # Increased to 5 minutes for slow VM performance
+TIMEOUT_SECONDS = 450  # Increased to 7.5 minutes for very slow corporate load-more cycles
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
 
 def clean_data_folder(data_path):
@@ -241,10 +241,12 @@ def run_test(target, module, csv_lock):
                 ])
                 return True
             else:
-                # Log errors for debugging
+                # Log errors for debugging with category namespacing to avoid collisions
                 log_dir = os.path.join(BASE_DIR, "logs")
                 os.makedirs(log_dir, exist_ok=True)
-                with open(os.path.join(log_dir, f"{module}.log"), "w", encoding='utf-8') as log_file:
+                log_filename = f"{target['name']}_{module}.log"
+                with open(os.path.join(log_dir, log_filename), "w", encoding='utf-8') as log_file:
+                    log_file.write(f"--- FAILED MODULE: {target['name']}/{module} ---\n")
                     log_file.write("--- STDOUT ---\n")
                     log_file.writelines(stdout_data)
                     log_file.write("\n--- STDERR ---\n")
