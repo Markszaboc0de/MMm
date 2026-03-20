@@ -32,7 +32,9 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 450  # Increased to 7.5 minutes for very slow corporate load-more cycles
+TIMEOUT_SECONDS = 300  # 5 minutes per scraper
+# Scripts to exclude from the test scan (utility scripts, not scrapers)
+EXCLUDE_SCRIPTS = {"extract!!.py", "extract.py", "run_all.py", "base_scraper.py"}
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
 
 def clean_data_folder(data_path):
@@ -277,14 +279,15 @@ def main():
     for target in TARGETS:
         if not os.path.exists(target["modules_path"]):
             continue
-        modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__')])
+        modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__') and f not in EXCLUDE_SCRIPTS])
         for module in modules:
             tasks.append((target, module))
             
     total_scrapers = len(tasks)
     
-    # Execute 3 scrapers simultaneously to prevent CPU/RAM exhaustion on standard VMs
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    # Use 1 worker to ensure only one Chrome instance runs at a time on the VM.
+    # Chrome is memory-heavy; 3 concurrent instances caused the OOM crash.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):
