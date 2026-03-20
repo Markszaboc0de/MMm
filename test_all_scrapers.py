@@ -27,7 +27,7 @@ TARGETS = [
     {
         "name": "ATS",
         "modules_path": os.path.join(BASE_DIR, "ATS scrapers", "scrapers"),
-        "data_path": os.path.join(BASE_DIR, "ATS scrapers", "Run", "data"),
+        "data_path": os.path.join(BASE_DIR, "ATS scrapers", "data"),
         "cwd": os.path.join(BASE_DIR, "ATS scrapers", "Run")
     }
 ]
