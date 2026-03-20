@@ -32,7 +32,7 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 300  # 5 minutes per scraper
+TIMEOUT_SECONDS = 900  # 15 minutes per scraper (Sequential mode ensures no OOM crashes)
 # Scripts to exclude from the test scan (utility scripts, not scrapers)
 EXCLUDE_SCRIPTS = {"extract!!.py", "extract.py", "run_all.py", "base_scraper.py"}
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
@@ -168,8 +168,6 @@ def run_test(target, module, csv_lock):
         # Ensure ATS scrapers can resolve `core.base_scraper` by adding their root to PYTHONPATH
         target_root = os.path.dirname(target["cwd"]) if "ATS" in target["cwd"] else target["cwd"]
         env["PYTHONPATH"] = f"{target_root}{os.pathsep}{BASE_DIR}{os.pathsep}{env.get('PYTHONPATH', '')}"
-        # Tell scrapers they are running in health-check mode (save 1 job and exit)
-        env["HEALTH_CHECK_MODE"] = "1"
 
         process = subprocess.Popen(
             [sys.executable, module_path],
@@ -287,9 +285,10 @@ def main():
             
     total_scrapers = len(tasks)
     
-    # 5 workers: safe now because HEALTH_CHECK_MODE keeps Chrome short-lived (1 job each).
-    # Non-Selenium scrapers are very lightweight so 5 concurrent is fine.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    # Use 1 worker to ensure only one Chrome instance runs at a time on the VM.
+    # This avoids RAM exhaustion and crash-related failures.
+    # We increase the timeout significantly to accommodate slow corporate scrapers.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):

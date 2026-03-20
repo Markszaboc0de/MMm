@@ -47,7 +47,6 @@ def run_scraper():
     init_db()
     print(f"🚀 Starting {COMPANY_NAME} Scraper (React DOM + Markdown Mode)...")
 
-    HEALTH_CHECK = os.environ.get("HEALTH_CHECK_MODE") == "1"
     driver = get_chrome_driver()
 
     job_links = []
@@ -76,8 +75,7 @@ def run_scraper():
         last_height = driver.execute_script(
             "return document.body.scrollHeight")
 
-        max_scrolls = 1 if HEALTH_CHECK else 5
-        while scroll_attempts < max_scrolls:
+        while scroll_attempts < 5:
             # Click "Load More" buttons if they pop up
             driver.execute_script("""
                 let buttons = Array.from(document.querySelectorAll('button'));
@@ -172,8 +170,7 @@ def run_scraper():
         conn = sqlite3.connect(DB_PATH)
         wait = WebDriverWait(driver, 10)
 
-        max_jobs = 1 if HEALTH_CHECK else len(job_links)
-        for idx, job in enumerate(job_links[:max_jobs], 1):
+        for idx, job in enumerate(job_links, 1):
             try:
                 cursor = conn.cursor()
                 cursor.execute(
