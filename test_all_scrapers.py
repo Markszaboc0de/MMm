@@ -145,11 +145,17 @@ def run_test(target, module, csv_lock):
     base_name = module.replace("module_", "").replace("scrape_", "").replace(".py", "").lower()
     
     try:
+        env = os.environ.copy()
+        # Ensure ATS scrapers can resolve `core.base_scraper` by adding their root to PYTHONPATH
+        target_root = os.path.dirname(target["cwd"]) if "ATS" in target["cwd"] else target["cwd"]
+        env["PYTHONPATH"] = f"{target_root}{os.pathsep}{BASE_DIR}{os.pathsep}{env.get('PYTHONPATH', '')}"
+
         process = subprocess.Popen(
             [sys.executable, module_path],
             cwd=target["cwd"],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
+            env=env
         )
         
         while True:
