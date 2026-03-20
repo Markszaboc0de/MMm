@@ -32,7 +32,7 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 180  # 3 minutes max per scraper
+TIMEOUT_SECONDS = 300  # Increased to 5 minutes for slow VM performance
 RESULTS_CSV = os.path.join(BASE_DIR, "scraper_health_results.csv")
 
 def clean_data_folder(data_path):
@@ -103,8 +103,20 @@ def get_expected_db_filename(module_path):
         with open(module_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
+        # Extract COMPANY_NAME for f-string resolution
+        company_match = re.search(r'COMPANY_NAME\s*=\s*["\']([^"\']+)["\']', content)
+        company_name = company_match.group(1) if company_match else ""
+
+        # Pattern 1: Regex for literal or f-string in DB_PATH
         m1 = re.search(r'DB_PATH\s*=\s*.*?["\']([^"\']+\.(?:db|sqlite))["\']', content)
-        if m1: return os.path.basename(m1.group(1)).lower()
+        if m1: 
+            raw_path = m1.group(1)
+            # Resolve common f-string placeholders
+            if "{COMPANY_NAME.lower()}" in raw_path:
+                raw_path = raw_path.replace("{COMPANY_NAME.lower()}", company_name.lower())
+            elif "{COMPANY_NAME}" in raw_path:
+                raw_path = raw_path.replace("{COMPANY_NAME}", company_name)
+            return os.path.basename(raw_path).lower()
         
         m2 = re.search(r'db_filename\s*=\s*["\'].*?([^/"\']+\.(?:db|sqlite))["\']', content)
         if m2: return os.path.basename(m2.group(1)).lower()
@@ -153,11 +165,25 @@ def run_test(target, module, csv_lock):
         process = subprocess.Popen(
             [sys.executable, module_path],
             cwd=target["cwd"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            env=env
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            text=True
         )
         
+        stdout_data = []
+        stderr_data = []
+        
+        # Start threads to read pipes without blocking
+        def read_pipe(pipe, data_list):
+            for line in pipe:
+                data_list.append(line)
+                
+        t1 = threading.Thread(target=read_pipe, args=(process.stdout, stdout_data))
+        t2 = threading.Thread(target=read_pipe, args=(process.stderr, stderr_data))
+        t1.start()
+        t2.start()
+
         while True:
             elapsed = time.time() - start_time
             if elapsed > TIMEOUT_SECONDS:
@@ -210,6 +236,15 @@ def run_test(target, module, csv_lock):
                 ])
                 return True
             else:
+                # Log errors for debugging
+                log_dir = os.path.join(BASE_DIR, "logs")
+                os.makedirs(log_dir, exist_ok=True)
+                with open(os.path.join(log_dir, f"{module}.log"), "w", encoding='utf-8') as log_file:
+                    log_file.write("--- STDOUT ---\n")
+                    log_file.writelines(stdout_data)
+                    log_file.write("\n--- STDERR ---\n")
+                    log_file.writelines(stderr_data)
+                
                 writer.writerow([target["name"], module, "FAILED/TIMEOUT", "", "", "", f"{time.time() - start_time:.1f}"])
                 return False
 
@@ -240,8 +275,8 @@ def main():
             
     total_scrapers = len(tasks)
     
-    # Execute 5 scrapers simultaneously!
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    # Execute 3 scrapers simultaneously to prevent CPU/RAM exhaustion on standard VMs
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):

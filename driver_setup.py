@@ -8,6 +8,8 @@ import shutil
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 
 
 def _find_binary(candidates):
@@ -21,7 +23,8 @@ def _find_binary(candidates):
 def get_chrome_driver() -> webdriver.Chrome:
     """
     Returns a headless, sandboxed Chrome WebDriver instance.
-    Automatically detects the correct binary locations.
+    Automatically detects the correct binary locations using webdriver-manager
+    and fallback paths for common Linux/VM environments.
     """
     options = Options()
     options.page_load_strategy = 'eager'
@@ -34,36 +37,41 @@ def get_chrome_driver() -> webdriver.Chrome:
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
+    # Common binary locations for Chromium-based browsers on Linux/Snaps
     chrome_candidates = [
-        shutil.which("chromium-browser"),
-        shutil.which("chromium"),
         shutil.which("google-chrome"),
         shutil.which("google-chrome-stable"),
+        shutil.which("chromium"),
+        shutil.which("chromium-browser"),
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
         "/usr/bin/chromium-browser",
         "/usr/bin/chromium",
-        "/usr/bin/google-chrome",
         "/snap/bin/chromium",
-        "/usr/bin/google-chrome-stable",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # Mac fallback
     ]
-
-    driver_candidates = [
-        shutil.which("chromedriver"),
-        "/usr/bin/chromedriver",
-        "/usr/lib/chromium-browser/chromedriver",
-        "/usr/lib/chromium/chromedriver",
-        "/snap/bin/chromium.chromedriver",
-    ]
-
+    
     chrome_binary = _find_binary(chrome_candidates)
-    chromedriver_path = _find_binary(driver_candidates)
-
     if chrome_binary:
         options.binary_location = chrome_binary
+        print(f"   🔍 Using Chrome Binary: {chrome_binary}")
 
-    if not chromedriver_path:
-        raise RuntimeError(
-            "chromedriver not found. On Ubuntu/ARM run: sudo apt install chromium-browser chromium-chromedriver"
-        )
+    try:
+        # Determine if we should use Chromium vs Google Chrome for manager
+        chrome_type = ChromeType.CHROMIUM if (chrome_binary and "chrom" in chrome_binary.lower()) else ChromeType.GOOGLE
+        driver_path = ChromeDriverManager(chrome_type=chrome_type).install()
+        service = Service(executable_path=driver_path)
+    except Exception as e:
+        print(f"   ⚠️ WebDriverManager failed ({e}), searching for local drivers...")
+        driver_candidates = [
+            shutil.which("chromedriver"),
+            "/usr/bin/chromedriver",
+            "/usr/lib/chromium-browser/chromedriver",
+            "/snap/bin/chromium.chromedriver",
+        ]
+        chromedriver_path = _find_binary(driver_candidates)
+        if not chromedriver_path:
+             raise RuntimeError(f"chromedriver not found and manager failed. Error: {e}")
+        service = Service(executable_path=chromedriver_path)
 
-    service = Service(executable_path=chromedriver_path)
     return webdriver.Chrome(service=service, options=options)

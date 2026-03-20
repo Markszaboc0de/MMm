@@ -4,14 +4,15 @@ import sys
 import re
 import time
 from urllib.parse import urljoin
-import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-# Ensure Python can find the 'core' module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure Python can find the 'core' module and the root driver_setup
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(root_dir)
+from driver_setup import get_chrome_driver
 
 # --- CONFIGURATION ---
 TARGETS_FILE = "../targets/hrmaster_targets.txt"
@@ -58,10 +59,9 @@ class HrMasterScraper:
         targets = self.load_targets()
         print(f"🚀 Starting Scrape on {len(targets)} HRMaster companies...\n")
 
-        options = uc.ChromeOptions()
-        options.add_argument("--disable-popup-blocking")
-        options.add_argument("--window-size=1920,1080")
-        driver = uc.Chrome(options=options, version_main=145)
+        driver = get_chrome_driver()
+        # Set a slightly longer wait for HRMaster's dynamic tables
+        wait = WebDriverWait(driver, 10)
 
         total_saved = 0
 
