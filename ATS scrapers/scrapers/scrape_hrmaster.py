@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+import sqlite3
 
 # Ensure Python can find the 'core' module and the root driver_setup
 # This MUST happen before importing core or driver_setup

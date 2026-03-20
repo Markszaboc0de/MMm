@@ -42,17 +42,13 @@ def init_db():
     conn.close()
 
 
-def create_driver():
-    """Tiszta böngésző opciók minden indításkor a memóriaszivárgás ellen"""
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    return webdriver.Chrome(options=options)
-
+# remove create_driver as it was broken and we use get_chrome_driver now
 
 def run_scraper():
     init_db()
     print(f"🚀 {COMPANY_NAME} Scraper indítása (GE Aerospace várakozási logika, Tiszta DOM mód)...")
 
-    driver = create_driver()
+    driver = get_chrome_driver()
     job_links = []
     unique_urls = set()
 

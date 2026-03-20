@@ -49,10 +49,7 @@ def init_db():
     conn.close()
 
 
-def create_driver():
-    """Creates fresh options for every launch to prevent 'options reuse' crashes"""
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    return webdriver.Chrome(options=options)
+# Using centralized get_chrome_driver instead of broken local create_driver
 
 
 def run_scraper():
@@ -60,7 +57,7 @@ def run_scraper():
     print(
         f"🚀 Starting {COMPANY_NAME} Scraper (GE Aerospace UI Filtering Mode)...")
 
-    driver = create_driver()
+    driver = get_chrome_driver()
     job_links = []
     unique_urls = set()
 
@@ -207,7 +204,7 @@ def run_scraper():
             pass
         time.sleep(2)
 
-        driver = create_driver()
+        driver = get_chrome_driver()
         wait = WebDriverWait(driver, 10)
 
         # --- PHASE 2: DEEP SCRAPING DESCRIPTIONS & MULTI-LOCATIONS ---
@@ -235,7 +232,7 @@ def run_scraper():
                     except:
                         pass
                     time.sleep(2)
-                    driver = create_driver()
+                    driver = get_chrome_driver()
                     wait = WebDriverWait(driver, 10)
                     driver.get(job['url'])
 

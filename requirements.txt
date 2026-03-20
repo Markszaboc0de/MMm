@@ -5,3 +5,4 @@ undetected-chromedriver==3.5.5
 webdriver-manager
 psycopg2-binary>=2.9.11
 python-dotenv
+markdownify
