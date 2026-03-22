@@ -62,10 +62,10 @@ def export_unified_data():
     print(f"{'='*50}")
     
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(root_dir, "data")
+    data_dir = os.path.join(os.path.dirname(root_dir), "data")
     
     if not os.path.exists(data_dir):
-        print("No data directory found.")
+        print(f"No data directory found at {data_dir}.")
         return
         
     unified_csv_path = os.path.join(data_dir, "unified_jobs.csv")

@@ -73,6 +73,7 @@ class BaseScraper:
 
     def _setup_database(self):
         try:
+            os.makedirs(os.path.dirname(os.path.abspath(self.db_name)), exist_ok=True)
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
             # Added 'description' column
