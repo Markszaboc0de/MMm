@@ -45,25 +45,35 @@ class WorkdayScraper:
         api_base = f"https://{host}/wday/cxs/{tenant}/{site}"
         return api_base, tenant, site
 
-    def fetch_jobs(self, api_base, search_text="", max_jobs=None):
-        print(f"   Fetching jobs from {api_base}/jobs (search: '{search_text}')...")
+    def get_headers(self):
+        return {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+
+    def fetch_jobs(self, api_base, max_jobs=None):
+        print(f"   Fetching jobs from {api_base}/jobs...")
         jobs_url = f"{api_base}/jobs"
         all_jobs = []
         offset = 0
         limit = 20
         global_total = None
         
+        headers = self.get_headers()
+        
         while True:
             payload = {
                 "appliedFacets": {},
                 "limit": limit,
                 "offset": offset,
-                "searchText": search_text
+                "searchText": ""
             }
             
             try:
-                resp = requests.post(jobs_url, json=payload, timeout=10)
+                resp = requests.post(jobs_url, json=payload, headers=headers, timeout=15)
                 if resp.status_code != 200:
+                    print(f"   ⚠️ Blocked/Failed on {api_base}/jobs: HTTP {resp.status_code}")
                     break
                 
                 data = resp.json()
@@ -72,8 +82,7 @@ class WorkdayScraper:
                 
                 if global_total is None:
                     global_total = current_total
-                    if global_total > 0:
-                        print(f"      Total jobs found for '{search_text}': {global_total}")
+                    print(f"   Total jobs found: {global_total}")
                 
                 if not jobs:
                     break
@@ -90,7 +99,7 @@ class WorkdayScraper:
                 time.sleep(0.5) 
                 
             except Exception as e:
-                print(f"   ❌ Error fetching jobs for '{search_text}': {e}")
+                print(f"   ❌ Error fetching jobs from {api_base}: {e}")
                 break
                 
         return all_jobs
@@ -100,8 +109,9 @@ class WorkdayScraper:
             return None
         url = f"{api_base}/job/{job_slug}"
         try:
-            resp = requests.get(url, timeout=10)
+            resp = requests.get(url, headers=self.get_headers(), timeout=15)
             if resp.status_code != 200:
+                print(f"   ⚠️ Failed to get details for {job_slug} (HTTP {resp.status_code})")
                 return None
             data = resp.json()
             
@@ -123,7 +133,6 @@ class WorkdayScraper:
         print(f"🚀 Starting Scrape on {len(targets)} Workday companies...\n")
         
         total_saved = 0
-        search_terms = ["Hungary", "Budapest", "Magyarország"]
         
         for start_url in targets:
             start_url = start_url.split('?')[0]
@@ -133,26 +142,16 @@ class WorkdayScraper:
                 api_base, tenant, site = self.get_workday_config(start_url)
                 company_name = tenant.capitalize()
                 
-                # Use a dictionary to deduplicate jobs by externalPath
-                unique_jobs = {}
+                jobs = self.fetch_jobs(api_base)
                 
-                for term in search_terms:
-                    jobs = self.fetch_jobs(api_base, search_text=term)
-                    for job in jobs:
-                        path_key = job.get('externalPath')
-                        if path_key and path_key not in unique_jobs:
-                            unique_jobs[path_key] = job
-                
-                jobs_to_process = list(unique_jobs.values())
-                
-                if not jobs_to_process:
-                    print(f"   ⚠️ 0 jobs found matching Hungary/Budapest for {company_name}.")
+                if not jobs:
+                    print(f"   ⚠️ 0 jobs found for {company_name}.")
                     continue
                     
-                print(f"   Found {len(jobs_to_process)} unique matching jobs. Fetching details and saving...")
+                print(f"   Found {len(jobs)} jobs. Fetching details and saving...")
                 
                 saved_for_company = 0
-                for i, job in enumerate(jobs_to_process):
+                for i, job in enumerate(jobs):
                     external_path = job.get('externalPath', '')
                     parts = external_path.strip('/').split('/')
                     job_slug = parts[-1] if parts else None

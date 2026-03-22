@@ -80,12 +80,43 @@ def run_all_modules():
         print(f"▶️ Running: {module}...", flush=True)
 
         try:
-            result = subprocess.run(
+            # Stream output directly so errors are visible, with an IDLE timeout (sliding window)
+            proc = subprocess.Popen(
                 [sys.executable, module_path],
-                timeout=SCRAPER_TIMEOUT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
             )
+            
+            last_output_time = [time.time()]
+            
+            def read_stdout():
+                for line in proc.stdout:
+                    print(line, end='', flush=True)
+                    last_output_time[0] = time.time()
+                    
+            import threading
+            t = threading.Thread(target=read_stdout)
+            t.daemon = True
+            t.start()
+            
+            timeout_expired = False
+            while True:
+                if proc.poll() is not None:
+                    break
+                if time.time() - last_output_time[0] > SCRAPER_TIMEOUT:
+                    print(f"\n   ⏰ IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
+                    proc.kill()
+                    timeout_expired = True
+                    break
+                time.sleep(1)
+                
+            t.join(timeout=1)
 
-            if result.returncode == 0:
+            if timeout_expired:
+                fail_count += 1
+            elif proc.returncode == 0:
                 print(f"   ✅ Success! Pushing to PostgreSQL...", flush=True)
                 jobs = get_all_jobs_from_sqlite()
                 if jobs:
@@ -95,12 +126,9 @@ def run_all_modules():
                     print(f"   ⚠️  No jobs found in SQLite to push.", flush=True)
                 success_count += 1
             else:
-                print(f"   ❌ Failed (exit code {result.returncode}).", flush=True)
+                print(f"   ❌ Failed (exit code {proc.returncode}).", flush=True)
                 fail_count += 1
 
-        except subprocess.TimeoutExpired:
-            print(f"   ⏰ TIMEOUT after {SCRAPER_TIMEOUT}s — moving on.", flush=True)
-            fail_count += 1
         except Exception as e:
             print(f"   ❌ Critical error: {e}", flush=True)
             fail_count += 1
