@@ -107,7 +107,7 @@ class WorkableApiScraper:
 
             print(f"--> Fetching API for: {company_name}")
             try:
-                response = requests.get(api_url, timeout=10)
+                response = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=10)
 
                 if response.status_code != 200:
                     print(

@@ -38,7 +38,7 @@ class SoftgardenScraper:
 
             print(f"--> Fetching Softgarden for: {company_name}")
             try:
-                response = requests.get(vacancies_url, timeout=15)
+                response = requests.get(vacancies_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=15)
                 time.sleep(1)
 
                 if response.status_code != 200:
@@ -67,7 +67,7 @@ class SoftgardenScraper:
 
                 for job_url in job_links:
                     try:
-                        job_res = requests.get(job_url, timeout=10)
+                        job_res = requests.get(job_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=10)
                         if job_res.status_code != 200:
                             continue
                             

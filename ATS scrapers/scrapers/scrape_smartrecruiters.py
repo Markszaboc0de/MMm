@@ -54,7 +54,7 @@ class SmartRecruitersApiScraper:
     def fetch_full_description(self, company_slug, job_id):
         detail_url = f"https://api.smartrecruiters.com/v1/companies/{company_slug}/postings/{job_id}"
         try:
-            res = requests.get(detail_url, timeout=5)
+            res = requests.get(detail_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=5)
             if res.status_code == 200:
                 data = res.json()
                 job_ad = data.get('jobAd', {}).get('sections', {})
@@ -135,7 +135,7 @@ class SmartRecruitersApiScraper:
                 api_url = f"https://api.smartrecruiters.com/v1/companies/{company_slug}/postings?limit=100&offset={offset}"
 
                 try:
-                    response = requests.get(api_url, timeout=10)
+                    response = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=10)
                     if response.status_code != 200:
                         print(
                             f"   ⚠️ Could not load API page (Status {response.status_code})")
