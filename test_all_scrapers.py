@@ -189,30 +189,41 @@ def run_test(target, module, csv_lock):
         t1.start()
         t2.start()
 
+        last_stdout_len = 0
+        last_stderr_len = 0
+        last_activity_time = start_time
+        process_completed = False
+
         while True:
-            elapsed = time.time() - start_time
-            if elapsed > TIMEOUT_SECONDS:
-                print(f"   ⏰ TIMEOUT ({TIMEOUT_SECONDS}s) for {module}. Killing process.")
+            current_time = time.time()
+            current_stdout_len = len(stdout_data)
+            current_stderr_len = len(stderr_data)
+
+            # Reset timeout counter if the process printed anything to the console (meaning it is making progress)
+            if current_stdout_len > last_stdout_len or current_stderr_len > last_stderr_len:
+                last_activity_time = current_time
+                last_stdout_len = current_stdout_len
+                last_stderr_len = current_stderr_len
+
+            elapsed_inactive = current_time - last_activity_time
+
+            if elapsed_inactive > TIMEOUT_SECONDS:
+                print(f"   ⏰ TIMEOUT ({TIMEOUT_SECONDS}s of INACTIVITY) for {module}. Killing frozen process.")
                 process.terminate()
                 break
                 
-            db_files = glob.glob(os.path.join(target["data_path"], "*.db")) + glob.glob(os.path.join(target["data_path"], "*.sqlite"))
-            
-            for db_file in db_files:
-                actual_name = os.path.basename(db_file).lower()
-                # Thread Safety: Only read from a db file if its name exactly matches the expected DB_PATH
-                if (expected_db and expected_db == actual_name) or (not expected_db and base_name in actual_name):
-                    job_found = extract_first_job(db_file)
-                    if job_found:
-                        break
-                        
-            if job_found:
-                print(f"   🎯 BINGO! Got 1 job for {module} at {elapsed:.1f}s!")
-                process.terminate()
-                break
-                
+            # Check if the process exited naturally
             if process.poll() is not None:
-                print(f"   ❌ Process {module} exited prematurely without finding jobs.")
+                print(f"   🏁 Process {module} finished organically.")
+                process_completed = True
+                
+                # Check if it actually saved any jobs in the end
+                db_files = glob.glob(os.path.join(target["data_path"], "*.db")) + glob.glob(os.path.join(target["data_path"], "*.sqlite"))
+                for db_file in db_files:
+                    actual_name = os.path.basename(db_file).lower()
+                    if (expected_db and expected_db == actual_name) or (not expected_db and base_name in actual_name):
+                        if extract_first_job(db_file):
+                            job_found = True
                 break
                 
             time.sleep(1)
