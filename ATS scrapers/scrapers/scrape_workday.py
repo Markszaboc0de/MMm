@@ -45,8 +45,8 @@ class WorkdayScraper:
         api_base = f"https://{host}/wday/cxs/{tenant}/{site}"
         return api_base, tenant, site
 
-    def fetch_jobs(self, api_base, max_jobs=None):
-        print(f"   Fetching jobs from {api_base}/jobs...")
+    def fetch_jobs(self, api_base, search_text="", max_jobs=None):
+        print(f"   Fetching jobs from {api_base}/jobs (search: '{search_text}')...")
         jobs_url = f"{api_base}/jobs"
         all_jobs = []
         offset = 0
@@ -58,7 +58,7 @@ class WorkdayScraper:
                 "appliedFacets": {},
                 "limit": limit,
                 "offset": offset,
-                "searchText": ""
+                "searchText": search_text
             }
             
             try:
@@ -72,7 +72,8 @@ class WorkdayScraper:
                 
                 if global_total is None:
                     global_total = current_total
-                    print(f"   Total jobs found: {global_total}")
+                    if global_total > 0:
+                        print(f"      Total jobs found for '{search_text}': {global_total}")
                 
                 if not jobs:
                     break
@@ -89,7 +90,7 @@ class WorkdayScraper:
                 time.sleep(0.5) 
                 
             except Exception as e:
-                print(f"   ❌ Error fetching jobs: {e}")
+                print(f"   ❌ Error fetching jobs for '{search_text}': {e}")
                 break
                 
         return all_jobs
@@ -122,6 +123,7 @@ class WorkdayScraper:
         print(f"🚀 Starting Scrape on {len(targets)} Workday companies...\n")
         
         total_saved = 0
+        search_terms = ["Hungary", "Budapest", "Magyarország"]
         
         for start_url in targets:
             start_url = start_url.split('?')[0]
@@ -131,16 +133,26 @@ class WorkdayScraper:
                 api_base, tenant, site = self.get_workday_config(start_url)
                 company_name = tenant.capitalize()
                 
-                jobs = self.fetch_jobs(api_base)
+                # Use a dictionary to deduplicate jobs by externalPath
+                unique_jobs = {}
                 
-                if not jobs:
-                    print(f"   ⚠️ 0 jobs found for {company_name}.")
+                for term in search_terms:
+                    jobs = self.fetch_jobs(api_base, search_text=term)
+                    for job in jobs:
+                        path_key = job.get('externalPath')
+                        if path_key and path_key not in unique_jobs:
+                            unique_jobs[path_key] = job
+                
+                jobs_to_process = list(unique_jobs.values())
+                
+                if not jobs_to_process:
+                    print(f"   ⚠️ 0 jobs found matching Hungary/Budapest for {company_name}.")
                     continue
                     
-                print(f"   Found {len(jobs)} jobs. Fetching details and saving...")
+                print(f"   Found {len(jobs_to_process)} unique matching jobs. Fetching details and saving...")
                 
                 saved_for_company = 0
-                for i, job in enumerate(jobs):
+                for i, job in enumerate(jobs_to_process):
                     external_path = job.get('externalPath', '')
                     parts = external_path.strip('/').split('/')
                     job_slug = parts[-1] if parts else None
