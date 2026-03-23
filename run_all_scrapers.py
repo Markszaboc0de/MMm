@@ -13,30 +13,8 @@ def run_script(script_path, cwd):
         print(f"--- Error running {script_path} (Exit code: {e.returncode}) ---\n")
 
 import urllib.request
-import psycopg2
-from dotenv import load_dotenv
 
-load_dotenv()
-
-def get_job_count():
-    try:
-        conn = psycopg2.connect(
-            host=os.getenv("PG_HOST", "localhost"),
-            port=os.getenv("PG_PORT", "5432"),
-            dbname=os.getenv("PG_DATABASE", "raw_db"),
-            user=os.getenv("PG_USER", "postgres"),
-            password=os.getenv("PG_PASSWORD")
-        )
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM scraped_jobs")
-        count = cursor.fetchone()[0]
-        conn.close()
-        return count
-    except Exception as e:
-        print(f"Failed to get job count: {e}")
-        return None
-
-def send_notification(runtime_seconds, job_count):
+def send_notification(runtime_seconds):
     try:
         # A unique topic name for your scraper notifications
         topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
@@ -45,11 +23,8 @@ def send_notification(runtime_seconds, job_count):
         seconds = int(runtime_seconds % 60)
         time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
 
-        if job_count is not None:
-            message = f"✅ All structured scrapers have finished executing!\n📊 Total Jobs in Database: {job_count}\n⏱️ Total Runtime: {time_str}"
-        else:
-            message = f"✅ All structured scrapers have finished executing!\n⏱️ Total Runtime: {time_str}"
-            
+        message = f"All structured scrapers have completed executing!\nTotal Runtime: {time_str}"
+        
         req = urllib.request.Request(
             topic_url,
             data=message.encode('utf-8'),
@@ -88,9 +63,8 @@ def main():
         run_script(script_path, cwd)
 
     total_time = time.time() - start_time
-    final_job_count = get_job_count()
     print(f"All structured scrapers have completed executing. (Took {total_time:.1f}s)")
-    send_notification(total_time, final_job_count)
+    send_notification(total_time)
 
 if __name__ == "__main__":
     main()
