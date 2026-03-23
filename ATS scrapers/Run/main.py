@@ -14,8 +14,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from postgres_export import push_to_postgres
 
 def find_scrapers():
-    scrapers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scrapers")
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    scrapers_dir = os.path.join(root_dir, "scrapers")
     if not os.path.exists(scrapers_dir):
+        print(f"❌ Error: Scrapers directory not found at {scrapers_dir}")
         return {}
     
     scraper_files = {}
