@@ -84,11 +84,18 @@ def push_to_postgres(jobs_data):
     skipped = 0
     for job in jobs_data:
         try:
+            # Force string casting and hard slicing to guarantee no DataError (value too long) 
+            # constraint violations which would rollback the entire array batch!
+            c_comp = str(job.get('company') or 'Unknown')[:250]
+            c_title = str(job.get('job_title') or 'Unknown')[:250]
+            c_city = str(job.get('city') or '')[:250]
+            c_country = str(job.get('country') or '')[:250]
+            
             values_list.append((
-                job.get('company', 'Unknown'),
-                job.get('job_title', 'Unknown'),
-                job.get('city', ''),
-                job.get('country', ''),
+                c_comp,
+                c_title,
+                c_city,
+                c_country,
                 job.get('job_description', ''),
                 job.get('url'),
                 job.get('date')
@@ -99,7 +106,8 @@ def push_to_postgres(jobs_data):
 
     if values_list:
         try:
-            execute_values(cursor, insert_query, values_list)
+            # Batch inserts to prevent overwhelming the PG buffer length limit on gigantic ATS arrays
+            execute_values(cursor, insert_query, values_list, page_size=1000)
             conn.commit()
             print(f"✅ Successfully upserted {len(values_list)} records to PostgreSQL database '{DB_NAME}'.")
         except Exception as e:
