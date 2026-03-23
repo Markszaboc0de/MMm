@@ -95,6 +95,44 @@ def run_diagnostics():
                             detail_resp = requests.get(detail_url, headers=headers, timeout=15)
                             if detail_resp.status_code == 200:
                                 print(f"   ✅ Job details fetched successfully!")
+                                
+                                # Step 2.5: Test SQLite Persistence
+                                print("   💾 [PIPELINE TEST] Attempting to save job to SQLite (workday_jobs.db)...")
+                                try:
+                                    scraper.db_saver.save_job({
+                                        "url": detail_url,
+                                        "title": "Debug Job Title",
+                                        "company": tenant,
+                                        "location_raw": "Debug Location",
+                                        "city": "Debug City",
+                                        "country": "Debug Country",
+                                        "description": "Debug Description"
+                                    })
+                                    print("   ✅ SQLite Save Successful!")
+                                except Exception as e:
+                                    print(f"   ❌ SQLite Save Failed: {e}")
+                                    
+                                # Step 2.6: Test PostgreSQL Export
+                                print("   📤 [PIPELINE TEST] Attempting to push payload to PostgreSQL raw_db...")
+                                try:
+                                    from postgres_export import push_to_postgres
+                                    
+                                    # This mimics exactly what ATS scrapers/Run/main.py does
+                                    test_payload = [{
+                                        'url': detail_url,
+                                        'job_title': "Debug Job Title",
+                                        'company': tenant,
+                                        'location_raw': "Debug Location",
+                                        'city': "Debug City",
+                                        'country': "Debug Country",
+                                        'job_description': "Debug Description",
+                                        'date': "2026-03-23 09:17:00"  # SQLite CURRENT_TIMESTAMP format
+                                    }]
+                                    
+                                    push_to_postgres(test_payload)
+                                    print("   ✅ PostgreSQL Push Test Finalized!")
+                                except Exception as e:
+                                    print(f"   ❌ PostgreSQL Push Failed: {type(e).__name__}: {e}")
                             else:
                                 print(f"   ❌ Failed to fetch details. HTTP {detail_resp.status_code}")
                         except Exception as e:
