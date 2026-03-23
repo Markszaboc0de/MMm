@@ -58,14 +58,15 @@ def run_scraper(scraper_name, scraper_path):
 def export_unified_data():
     """Reads all SQLite databases in the data folder and exports them to a unified CSV."""
     print(f"\n{'='*50}")
-    print("--- Generating Unified Export ---")
+    print("--- [ATS SYSTEM] Generating Unified Postgres Export ---")
     print(f"{'='*50}")
     
     root_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(os.path.dirname(root_dir), "data")
     
+    print(f"📂 Searching for ATS databases in: {data_dir}")
     if not os.path.exists(data_dir):
-        print(f"No data directory found at {data_dir}.")
+        print(f"❌ No data directory found at {data_dir}.")
         return
         
     unified_csv_path = os.path.join(data_dir, "unified_jobs.csv")
@@ -82,7 +83,7 @@ def export_unified_data():
         if file.endswith(".db"):
             db_found = True
             db_path = os.path.join(data_dir, file)
-            print(f"   Reading from {file}...")
+            print(f"   🔍 Reading payload from {file}...")
             
             try:
                 conn = sqlite3.connect(db_path)
@@ -91,11 +92,13 @@ def export_unified_data():
                 # Check if jobs table exists
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'")
                 if not cursor.fetchone():
+                    print(f"      ⚠️ No 'jobs' table found in {file}.")
                     continue
                     
                 # Fetch all jobs
                 cursor.execute(f"SELECT {', '.join(columns)} FROM jobs")
                 rows = cursor.fetchall()
+                print(f"      ✅ Extracted {len(rows)} raw rows from {file}.")
                 
                 for row in rows:
                     url = row[0]
@@ -114,21 +117,27 @@ def export_unified_data():
                 
                 conn.close()
             except Exception as e:
-                print(f"   ❌ Error reading {file}: {e}")
+                print(f"   ❌ FATAL SQLite Error extracting {file}: {type(e).__name__} -> {e}")
 
     if not db_found:
-        print("No database files found in the data directory.")
+        print("❌ No database files found in the data directory.")
         return
 
-    # Write unified CSV
+    print(f"\n📊 Total deduplicated ATS jobs ready for PostgreSQL sync: {len(all_jobs)}")
+
+    # Write unified Postgres
     if not all_jobs:
-        print("No jobs found in any databases.")
+        print("⚠️ No jobs found to export.")
         return
         
+    print(f"🚀 [ATS SYSTEM] Delegating {len(all_jobs)} jobs to postgres_export.py...")
     try:
         push_to_postgres(all_jobs)
+        print("✅ Postgres export fully completed.")
     except Exception as e:
-        print(f"❌ Error writing unified Postgres: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"❌ FATAL Error writing unified Postgres: {e}")
 
 
 if __name__ == "__main__":
