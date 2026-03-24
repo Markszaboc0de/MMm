@@ -1,9 +1,12 @@
 import os
 import sys
+import subprocess
+import threading
+import time
+
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-import runpy
 import importlib.util
 import sqlite3
 import csv
@@ -12,6 +15,8 @@ from datetime import datetime
 # Add root directory to path to import postgres_export
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from postgres_export import push_to_postgres
+
+SCRAPER_IDLE_TIMEOUT = 180  # 3 minutes
 
 def find_scrapers():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,28 +39,59 @@ def run_scraper(scraper_name, scraper_path):
     print(f"--- Running {scraper_name} ---")
     print(f"{'='*50}")
     
-    # We need to add scrapers to sys.path so it can find things if it imports relatively
     scrapers_dir = os.path.dirname(scraper_path)
-    if scrapers_dir not in sys.path:
-        sys.path.insert(0, scrapers_dir)
-        
-    # Also add the root directory to sys.path so they can find 'core'
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    if root_dir not in sys.path:
-        sys.path.insert(0, root_dir)
-        
-    # Change current working directory to scrapers_dir so relative paths inside scrapers work correctly
-    os.chdir(scrapers_dir)
-        
-    try:
-        runpy.run_path(scraper_path, run_name="__main__")
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"Error running {scraper_name}: {e}")
+    
+    # We must pass the correct PYTHONPATH so the subprocess can resolve imports natively
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH", "")
+    new_paths = f"{scrapers_dir}:{root_dir}"
+    env["PYTHONPATH"] = f"{new_paths}:{existing_pythonpath}" if existing_pythonpath else new_paths
 
-    # Change back
-    os.chdir(root_dir)
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, scraper_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            cwd=scrapers_dir,
+            env=env
+        )
+        
+        last_output_time = [time.time()]
+        
+        def read_stdout():
+            for line in proc.stdout:
+                print(line, end='', flush=True)
+                last_output_time[0] = time.time()
+                
+        t = threading.Thread(target=read_stdout)
+        t.daemon = True
+        t.start()
+        
+        timeout_expired = False
+        while True:
+            if proc.poll() is not None:
+                break
+            if time.time() - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
+                print(f"\n   ⏰ IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
+                proc.kill()
+                timeout_expired = True
+                break
+            time.sleep(1)
+            
+        t.join(timeout=2)
+        
+        if timeout_expired:
+            print(f"❌ {scraper_name} was forcefully terminated due to hanging.")
+        elif proc.returncode != 0:
+            print(f"❌ {scraper_name} crashed with exit code {proc.returncode}.")
+        else:
+            print(f"✅ {scraper_name} finished successfully.")
+            
+    except Exception as e:
+        print(f"Error running {scraper_name}: {e}")
 
 def export_unified_data():
     """Reads all SQLite databases in the data folder and exports them to a unified CSV."""
@@ -152,6 +188,9 @@ if __name__ == "__main__":
         for scraper_name in sorted(scrapers.keys()):
             run_scraper(scraper_name, scrapers[scraper_name])
             
+        export_unified_data()
+    elif args[0].lower() == "export":
+        print("Manual export requested. Skipping scraping...")
         export_unified_data()
     else:
         target = args[0]
