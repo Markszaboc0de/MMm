@@ -187,8 +187,9 @@ if __name__ == "__main__":
         # Sort them to be deterministic
         for scraper_name in sorted(scrapers.keys()):
             run_scraper(scraper_name, scrapers[scraper_name])
+            print(f"🔄 Executing intermediate pipeline push for {scraper_name}...", flush=True)
+            export_unified_data()
             
-        export_unified_data()
     elif args[0].lower() == "export":
         print("Manual export requested. Skipping scraping...")
         export_unified_data()

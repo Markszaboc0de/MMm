@@ -38,9 +38,35 @@ def send_notification(runtime_seconds):
     except Exception as e:
         print(f"Failed to send push notification: {e}")
 
+def clear_local_databases(base_dir):
+    import glob
+    data_dirs = [
+        os.path.join(base_dir, "ATS scrapers", "data"),
+        os.path.join(base_dir, "Magyar", "data"),
+        os.path.join(base_dir, "Manual", "data")
+    ]
+    for d in data_dirs:
+        if os.path.exists(d):
+            targets = glob.glob(os.path.join(d, "*.db")) + glob.glob(os.path.join(d, "*.sqlite"))
+            for f in targets:
+                try:
+                    os.remove(f)
+                    print(f"🧹 Deleted old cache: {f}")
+                except Exception as e:
+                    pass
+
 def main():
     # Base directory of this script (Magyar-Manual-main)
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 🧹 Clear PostgreSQL and local SQLite caches before starting so jobs aren't continuously duplicated
+    from postgres_export import clear_postgres_table
+    print("\n" + "="*50)
+    print("🧹 PRE-FLIGHT: Wiping databases for a fresh run...")
+    print("="*50)
+    clear_postgres_table()
+    clear_local_databases(base_dir)
+    print("✅ Databases cleared!\n")
     
     # Define the scripts to run and their desired working directories
     scripts_to_run = [

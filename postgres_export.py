@@ -50,6 +50,21 @@ def setup_postgres_table():
     cursor.close()
     conn.close()
 
+def clear_postgres_table():
+    """Completely empties the Postgres table to prepare for a fresh scraping cycle."""
+    setup_postgres_table()
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("TRUNCATE TABLE scraped_jobs;")
+        conn.commit()
+        print(f"🧹 Successfully cleared all existing records from PostgreSQL table 'scraped_jobs'.")
+    except Exception as e:
+        print(f"❌ Error clearing PostgreSQL table: {e}")
+    finally:
+        if 'cursor' in locals() and cursor: cursor.close()
+        if 'conn' in locals() and conn: conn.close()
+
 def push_to_postgres(jobs_data):
     """
     Pushes a list of dictionaries to the PostgreSQL database.
