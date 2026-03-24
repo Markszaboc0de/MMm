@@ -16,7 +16,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from postgres_export import push_to_postgres
 
-SCRAPER_IDLE_TIMEOUT = 180  # 3 minutes
+SCRAPER_IDLE_TIMEOUT = 1200  # 20 minutes allowed for silent heavy processing
 
 def find_scrapers():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

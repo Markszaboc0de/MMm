@@ -152,6 +152,9 @@ class WorkdayScraper:
                 
                 saved_for_company = 0
                 for i, job in enumerate(jobs):
+                    if i > 0 and i % 20 == 0:
+                        print(f"      ...processed {i}/{len(jobs)} jobs for {company_name}...", flush=True)
+                        
                     external_path = job.get('externalPath', '')
                     parts = external_path.strip('/').split('/')
                     job_slug = parts[-1] if parts else None

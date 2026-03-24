@@ -16,7 +16,7 @@ sys.path.insert(0, ROOT_DIR)
 from postgres_export import push_to_postgres
 
 # Max seconds a single scraper is allowed to run before being killed
-SCRAPER_TIMEOUT = 180  # 3 minutes per module
+SCRAPER_TIMEOUT = 1200  # 20 minutes per module
 
 
 def get_all_jobs_from_sqlite():
