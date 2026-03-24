@@ -35,9 +35,7 @@ def find_scrapers():
     return scraper_files
 
 def run_scraper(scraper_name, scraper_path):
-    print(f"\n{'='*50}")
-    print(f"--- Running {scraper_name} ---")
-    print(f"{'='*50}")
+    print(f"\n▶️ Starting: {scraper_name}...", flush=True)
     
     scrapers_dir = os.path.dirname(scraper_path)
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -63,7 +61,8 @@ def run_scraper(scraper_name, scraper_path):
         
         def read_stdout():
             for line in proc.stdout:
-                print(line, end='', flush=True)
+                # Prefix the line with the module name to avoid interleaving confusion
+                print(f"[{scraper_name}] {line}", end='', flush=True)
                 last_output_time[0] = time.time()
                 
         t = threading.Thread(target=read_stdout)
@@ -75,7 +74,7 @@ def run_scraper(scraper_name, scraper_path):
             if proc.poll() is not None:
                 break
             if time.time() - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
-                print(f"\n   ⏰ IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
+                print(f"\n   ⏰ [{scraper_name}] IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
                 proc.kill()
                 timeout_expired = True
                 break
@@ -84,14 +83,14 @@ def run_scraper(scraper_name, scraper_path):
         t.join(timeout=2)
         
         if timeout_expired:
-            print(f"❌ {scraper_name} was forcefully terminated due to hanging.")
+            print(f"\n❌ [{scraper_name}] was forcefully terminated due to hanging.")
         elif proc.returncode != 0:
-            print(f"❌ {scraper_name} crashed with exit code {proc.returncode}.")
+            print(f"\n❌ [{scraper_name}] crashed with exit code {proc.returncode}.")
         else:
-            print(f"✅ {scraper_name} finished successfully.")
+            print(f"\n✅ [{scraper_name}] finished successfully.")
             
     except Exception as e:
-        print(f"Error running {scraper_name}: {e}")
+        print(f"\n❌ Error running {scraper_name}: {e}")
 
 def export_unified_data():
     """Reads all SQLite databases in the data folder and exports them to a unified CSV."""
@@ -183,12 +182,22 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     
     if len(args) == 0 or args[0].lower() == "all":
-        print("Running ALL scrapers...")
-        # Sort them to be deterministic
-        for scraper_name in sorted(scrapers.keys()):
-            run_scraper(scraper_name, scrapers[scraper_name])
-            print(f"🔄 Executing intermediate pipeline push for {scraper_name}...", flush=True)
-            export_unified_data()
+        print("Running ALL ATS scrapers in parallel (3 workers)...")
+        import concurrent.futures
+        
+        db_lock = threading.Lock()
+        
+        def run_and_export(scraper_name):
+            scraper_path = scrapers[scraper_name]
+            run_scraper(scraper_name, scraper_path)
+            
+            with db_lock:
+                print(f"\n🔄 [{scraper_name}] Executing intermediate pipeline push...", flush=True)
+                export_unified_data()
+                
+        # Execute concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            executor.map(run_and_export, sorted(scrapers.keys()))
             
     elif args[0].lower() == "export":
         print("Manual export requested. Skipping scraping...")

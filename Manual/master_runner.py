@@ -69,15 +69,21 @@ def run_all_modules():
         print(f"⚠️ No scraper modules found in '{MODULES_FOLDER}/'.")
         return
 
-    print(f"📊 Found {len(modules)} modules to execute. Beginning run...\n")
+    print(f"📊 Found {len(modules)} modules to execute. Beginning parallel run (3 workers)...\n")
     print("=" * 50)
+
+    import concurrent.futures
+    import threading
 
     success_count = 0
     fail_count = 0
+    db_lock = threading.Lock()
+    count_lock = threading.Lock()
 
-    for module in modules:
+    def process_module(module):
+        nonlocal success_count, fail_count
         module_path = os.path.join(MODULES_FOLDER, module)
-        print(f"▶️ Running: {module}...", flush=True)
+        print(f"\n▶️ Starting: {module}...", flush=True)
 
         try:
             # Stream output directly so errors are visible, with an IDLE timeout (sliding window)
@@ -93,10 +99,10 @@ def run_all_modules():
             
             def read_stdout():
                 for line in proc.stdout:
-                    print(line, end='', flush=True)
+                    # Prefix the line with the module name to avoid interleaving confusion
+                    print(f"[{module}] {line}", end='', flush=True)
                     last_output_time[0] = time.time()
                     
-            import threading
             t = threading.Thread(target=read_stdout)
             t.daemon = True
             t.start()
@@ -106,35 +112,44 @@ def run_all_modules():
                 if proc.poll() is not None:
                     break
                 if time.time() - last_output_time[0] > SCRAPER_TIMEOUT:
-                    print(f"\n   ⏰ IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
+                    print(f"\n   ⏰ [{module}] IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
                     proc.kill()
                     timeout_expired = True
                     break
                 time.sleep(1)
                 
-            t.join(timeout=1)
+            t.join(timeout=2)
 
-            if timeout_expired:
-                fail_count += 1
-            elif proc.returncode == 0:
-                print(f"   ✅ Success! Pushing to PostgreSQL...", flush=True)
-                jobs = get_all_jobs_from_sqlite()
-                if jobs:
-                    push_to_postgres(jobs)
-                    print(f"   📤 Pushed {len(jobs)} total jobs to PostgreSQL.", flush=True)
+            with count_lock:
+                if timeout_expired:
+                    fail_count += 1
+                elif proc.returncode == 0:
+                    success_count += 1
                 else:
-                    print(f"   ⚠️  No jobs found in SQLite to push.", flush=True)
-                success_count += 1
-            else:
-                print(f"   ❌ Failed (exit code {proc.returncode}).", flush=True)
+                    print(f"\n   ❌ [{module}] Failed (exit code {proc.returncode}).", flush=True)
+                    fail_count += 1
+
+            if proc.returncode == 0 and not timeout_expired:
+                with db_lock:
+                    print(f"\n   ✅ [{module}] Success! Pushing to PostgreSQL...", flush=True)
+                    jobs = get_all_jobs_from_sqlite()
+                    if jobs:
+                        push_to_postgres(jobs)
+                        print(f"   📤 [{module}] Pushed {len(jobs)} total jobs to PostgreSQL.", flush=True)
+                    else:
+                        print(f"   ⚠️  [{module}] No jobs found in SQLite to push.", flush=True)
+                        
+        except Exception as e:
+            with count_lock:
+                print(f"\n   ❌ [{module}] Critical error: {e}", flush=True)
                 fail_count += 1
 
-        except Exception as e:
-            print(f"   ❌ Critical error: {e}", flush=True)
-            fail_count += 1
+    # Execute all modules using a constrained ThreadPool
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        executor.map(process_module, modules)
 
-        print("-" * 50, flush=True)
-        time.sleep(1)
+    print("\n" + "=" * 50, flush=True)
+    time.sleep(1)
 
     print("\n🏁 PIPELINE COMPLETE")
     print(f"📈 Successful: {success_count}")
