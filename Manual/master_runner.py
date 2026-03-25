@@ -82,16 +82,23 @@ def run_all_modules():
     fail_count = 0
     db_lock = threading.Lock()
     count_lock = threading.Lock()
+    launch_lock = threading.Lock()
+    last_launch_time = [0.0]
 
-    def process_module(args):
-        index, module = args
+    def process_module(module):
         nonlocal success_count, fail_count
         module_path = os.path.join(MODULES_FOLDER, module)
-        # Staggered start — each worker waits its turn before launching
-        stagger_wait = index * STAGGER_SECONDS
-        if stagger_wait > 0:
-            print(f"\n⏳ [{module}] Waiting {stagger_wait}s before launch (stagger {index+1}/{len(modules)})...", flush=True)
-            time.sleep(stagger_wait)
+        
+        # Dynamic staggered start
+        with launch_lock:
+            now = time.time()
+            elapsed = now - last_launch_time[0]
+            if elapsed < STAGGER_SECONDS and last_launch_time[0] > 0:
+                wait_time = STAGGER_SECONDS - elapsed
+                print(f"\n⏳ [{module}] Staggering launch for {wait_time:.1f}s to avoid CPU spike...", flush=True)
+                time.sleep(wait_time)
+            last_launch_time[0] = time.time()
+            
         print(f"\n▶️ Starting: {module}...", flush=True)
 
         try:
@@ -155,7 +162,7 @@ def run_all_modules():
 
     # Execute all modules using a constrained ThreadPool
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        executor.map(process_module, enumerate(modules))
+        executor.map(process_module, modules)
 
     print("\n" + "=" * 50, flush=True)
     time.sleep(1)

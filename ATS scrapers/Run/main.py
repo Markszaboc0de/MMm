@@ -185,17 +185,24 @@ if __name__ == "__main__":
         print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
         MAX_WORKERS = 10
-        STAGGER_SECONDS = 60
         db_lock = threading.Lock()
         
-        def run_and_export(args):
-            index, scraper_name = args
+        launch_lock = threading.Lock()
+        last_launch_time = [0.0]
+        
+        def run_and_export(scraper_name):
             scraper_path = scrapers[scraper_name]
-            # Staggered start
-            stagger_wait = index * STAGGER_SECONDS
-            if stagger_wait > 0:
-                print(f"\n⏳ [{scraper_name}] Waiting {stagger_wait}s before launch...", flush=True)
-                time.sleep(stagger_wait)
+            
+            # Dynamic stagger: Ensure at least 60s between ANY two scraper rapid-starts
+            with launch_lock:
+                now = time.time()
+                elapsed = now - last_launch_time[0]
+                if elapsed < 60.0 and last_launch_time[0] > 0:
+                    wait_time = 60.0 - elapsed
+                    print(f"\n⏳ [{scraper_name}] Staggering launch for {wait_time:.1f}s to avoid CPU spike...", flush=True)
+                    time.sleep(wait_time)
+                last_launch_time[0] = time.time()
+                
             run_scraper(scraper_name, scraper_path)
             
             with db_lock:
@@ -204,7 +211,7 @@ if __name__ == "__main__":
                 
         # Execute concurrently
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            executor.map(run_and_export, enumerate(sorted(scrapers.keys())))
+            executor.map(run_and_export, sorted(scrapers.keys()))
             
     elif args[0].lower() == "export":
         print("Manual export requested. Skipping scraping...")
