@@ -68,6 +68,13 @@ def main():
     clear_local_databases(base_dir)
     print("✅ Databases cleared!\n")
     
+    # 💿 Auto disk cleanup — clears Chromium tmp, journal logs, old snap revisions
+    try:
+        import cleanup_disk
+        cleanup_disk.main()
+    except Exception as e:
+        print(f"⚠️ Disk cleanup skipped: {e}")
+    
     # Define the scripts to run and their desired working directories
     scripts_to_run = [
         {"script": "main.py", "cwd": os.path.join(base_dir, "ATS scrapers", "Run")},
