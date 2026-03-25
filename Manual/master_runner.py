@@ -70,7 +70,9 @@ def run_all_modules():
         print(f"⚠️ No scraper modules found in '{MODULES_FOLDER}/'.")
         return
 
-    print(f"📊 Found {len(modules)} modules to execute. Beginning parallel run (3 workers)...\n")
+    MAX_WORKERS = 10
+    STAGGER_SECONDS = 60  # 1 minute between each worker launch
+    print(f"📊 Found {len(modules)} modules to execute. Beginning parallel run ({MAX_WORKERS} workers, {STAGGER_SECONDS}s stagger)...\n")
     print("=" * 50)
 
     import concurrent.futures
@@ -81,9 +83,15 @@ def run_all_modules():
     db_lock = threading.Lock()
     count_lock = threading.Lock()
 
-    def process_module(module):
+    def process_module(args):
+        index, module = args
         nonlocal success_count, fail_count
         module_path = os.path.join(MODULES_FOLDER, module)
+        # Staggered start — each worker waits its turn before launching
+        stagger_wait = index * STAGGER_SECONDS
+        if stagger_wait > 0:
+            print(f"\n⏳ [{module}] Waiting {stagger_wait}s before launch (stagger {index+1}/{len(modules)})...", flush=True)
+            time.sleep(stagger_wait)
         print(f"\n▶️ Starting: {module}...", flush=True)
 
         try:
@@ -146,8 +154,8 @@ def run_all_modules():
                 fail_count += 1
 
     # Execute all modules using a constrained ThreadPool
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        executor.map(process_module, modules)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        executor.map(process_module, enumerate(modules))
 
     print("\n" + "=" * 50, flush=True)
     time.sleep(1)

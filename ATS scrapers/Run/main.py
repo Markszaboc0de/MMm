@@ -182,13 +182,20 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     
     if len(args) == 0 or args[0].lower() == "all":
-        print("Running ALL ATS scrapers in parallel (3 workers)...")
+        print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
-        
+        MAX_WORKERS = 10
+        STAGGER_SECONDS = 60
         db_lock = threading.Lock()
         
-        def run_and_export(scraper_name):
+        def run_and_export(args):
+            index, scraper_name = args
             scraper_path = scrapers[scraper_name]
+            # Staggered start
+            stagger_wait = index * STAGGER_SECONDS
+            if stagger_wait > 0:
+                print(f"\n⏳ [{scraper_name}] Waiting {stagger_wait}s before launch...", flush=True)
+                time.sleep(stagger_wait)
             run_scraper(scraper_name, scraper_path)
             
             with db_lock:
@@ -196,8 +203,8 @@ if __name__ == "__main__":
                 export_unified_data()
                 
         # Execute concurrently
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            executor.map(run_and_export, sorted(scrapers.keys()))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            executor.map(run_and_export, enumerate(sorted(scrapers.keys())))
             
     elif args[0].lower() == "export":
         print("Manual export requested. Skipping scraping...")
