@@ -6,10 +6,8 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
     HAS_PG = True
-    PG_ERROR = None
-except ImportError as e:
+except ImportError:
     HAS_PG = False
-    PG_ERROR = str(e)
 
 def count_sqlite_jobs():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -60,8 +58,7 @@ def count_postgres_jobs():
     print("="*50)
     
     if not HAS_PG:
-        print(f" ❌ {PG_ERROR}")
-        print("    Are you sure you activated your virtual environment? Try running: source venv/bin/activate")
+        print(" ❌ psycopg2 or python-dotenv not installed. Cannot check Postgres.")
         return
         
     db_host = os.getenv("PG_HOST", "localhost")
