@@ -75,11 +75,11 @@ def main():
     except Exception as e:
         print(f"⚠️ Disk cleanup skipped: {e}")
     
-    # Define the scripts to run and their desired working directories
+    # Define the scripts to run and their desired working directories (fastest first)
     scripts_to_run = [
-        {"script": "main.py", "cwd": os.path.join(base_dir, "ATS scrapers", "Run")},
         {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Magyar")},
         {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Manual")},
+        {"script": "main.py", "cwd": os.path.join(base_dir, "ATS scrapers", "Run")},
     ]
 
     start_time = time.time()
