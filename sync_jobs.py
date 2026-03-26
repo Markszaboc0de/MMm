@@ -89,7 +89,16 @@ def sync_databases():
             print("⚠️ No data found in source database.")
             return
 
-        print(f"📤 Preparing to sync {len(rows)} rows to destination database...")
+        # Deduplicate rows by URL before pushing
+        seen_urls = set()
+        deduped_rows = []
+        for r in rows:
+            url = r[5]
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                deduped_rows.append(r)
+
+        print(f"📤 Preparing to sync {len(deduped_rows)} unique rows to destination database...")
 
         # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
         dest_cursor.execute('''
@@ -102,12 +111,19 @@ def sync_databases():
                 url TEXT
             ) ON COMMIT DROP;
         ''')
+        dest_cursor.execute('CREATE INDEX idx_temp_sync_url ON temp_sync(url);')
+
+        # Ensure destination lookup is indexed to avoid combinatorial table scans!
+        dest_cursor.execute(f'''
+            CREATE INDEX IF NOT EXISTS idx_{DEST_TABLE}_url ON {DEST_TABLE}(url);
+        ''')
 
         execute_values(
             dest_cursor,
             '''INSERT INTO temp_sync (company, title, city, country, raw_text, url) 
                VALUES %s''',
-            rows
+            deduped_rows,
+            page_size=10000
         )
 
         # Update existing records
