@@ -22,6 +22,7 @@ SCRAPER_TIMEOUT = 1200  # 20 minutes per module
 def get_all_jobs_from_sqlite():
     """Read all jobs from all SQLite .db files in the data/ directory."""
     all_jobs = []
+    seen_urls = set()
     if not os.path.exists(DATA_FOLDER):
         print(f"   ⚠️  data/ folder not found: {DATA_FOLDER}")
         return all_jobs
@@ -43,15 +44,32 @@ def get_all_jobs_from_sqlite():
             if not title_col:
                 conn.close()
                 continue
-            cursor.execute(f"SELECT company, {title_col}, city, country, description, url FROM jobs")
+                
+            # Safely build query dynamically
+            select_cols = []
+            for col_name in ['company', title_col, 'city', 'country', 'description', 'url']:
+                if col_name in cols:
+                    select_cols.append(col_name)
+                else:
+                    select_cols.append("''")
+                    
+            query = f"SELECT {', '.join(select_cols)} FROM jobs"
+            cursor.execute(query)
+            
             for row in cursor.fetchall():
+                url = row[5] or ''
+                # Postgres throws error if the same batch contains duplicate ON CONFLICT keys
+                if not url or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                
                 all_jobs.append({
                     'company':         row[0] or '',
                     'job_title':       row[1] or '',
                     'city':            row[2] or '',
                     'country':         row[3] or 'Hungary',
                     'job_description': row[4] or '',
-                    'url':             row[5] or '',
+                    'url':             url,
                     'date':            scrape_date,
                 })
             conn.close()
