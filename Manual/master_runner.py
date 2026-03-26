@@ -57,6 +57,29 @@ def get_all_jobs_from_sqlite():
     return all_jobs
 
 
+def get_cpu_utilization():
+    """Returns total CPU utilization as a percentage (e.g., 100.0 means 1 core fully loaded)."""
+    try:
+        import psutil
+        return psutil.cpu_percent(interval=0.1) * psutil.cpu_count()
+    except Exception:
+        pass
+    try:
+        import subprocess
+        output = subprocess.check_output(['ps', '-A', '-o', '%cpu']).decode('utf-8')
+        total = 0.0
+        for line in output.splitlines()[1:]:
+            line = line.strip()
+            if line:
+                try:
+                    total += float(line)
+                except ValueError:
+                    pass
+        return total
+    except Exception:
+        return 0.0
+
+
 def run_all_modules():
     print("🚀 Starting the Master Scraper Pipeline...\n")
 
@@ -89,14 +112,21 @@ def run_all_modules():
         nonlocal success_count, fail_count
         module_path = os.path.join(MODULES_FOLDER, module)
         
-        # Dynamic staggered start
         with launch_lock:
+            # Dynamic stagger based on CPU: Only slow down if CPU > 196%
+            while True:
+                cpu_usage = get_cpu_utilization()
+                if cpu_usage > 196.0:
+                    print(f"\n⏳ [{module}] CPU load high ({cpu_usage:.1f}%). Delaying launch 10s...", flush=True)
+                    time.sleep(10)
+                else:
+                    break
+                    
+            # Minimal 2-second stagger to prevent instant I/O race conditions
             now = time.time()
             elapsed = now - last_launch_time[0]
-            if elapsed < STAGGER_SECONDS and last_launch_time[0] > 0:
-                wait_time = STAGGER_SECONDS - elapsed
-                print(f"\n⏳ [{module}] Staggering launch for {wait_time:.1f}s to avoid CPU spike...", flush=True)
-                time.sleep(wait_time)
+            if elapsed < 2.0 and last_launch_time[0] > 0:
+                time.sleep(2.0 - elapsed)
             last_launch_time[0] = time.time()
             
         print(f"\n▶️ Starting: {module}...", flush=True)
