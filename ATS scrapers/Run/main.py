@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 # Dynamic stagger based on CPU: Only slow down if CPU > 196%
                 while True:
                     cpu_usage = get_cpu_utilization()
-                    if cpu_usage > 196.0:
+                    if cpu_usage > 194.0:
                         print(f"\n⏳ [{scraper_name}] CPU load high ({cpu_usage:.1f}%). Delaying launch 10s...", flush=True)
                         time.sleep(10)
                     else:
