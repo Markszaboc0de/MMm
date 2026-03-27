@@ -221,7 +221,7 @@ if __name__ == "__main__":
     if len(args) == 0 or args[0].lower() == "all":
         print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
-        MAX_WORKERS = 4
+        MAX_WORKERS = 10
         db_lock = threading.Lock()
         
         launch_lock = threading.Lock()
@@ -231,12 +231,11 @@ if __name__ == "__main__":
             scraper_path = scrapers[scraper_name]
             
             with launch_lock:
-                # Dynamic stagger based on CPU: Limit to max 60s delay so we never halt indefinitely
-                for _ in range(6):
+                while True:
                     cpu_usage = get_cpu_utilization()
-                    if cpu_usage > 194.0:
-                        print(f"\n⏳ [{scraper_name}] CPU load high ({cpu_usage:.1f}%). Delaying launch 10s...", flush=True)
-                        time.sleep(10)
+                    if cpu_usage > 160.0:
+                        print(f"\n⏳ [{scraper_name}] CPU load high ({cpu_usage:.1f}%). Delaying launch until resources free up...", flush=True)
+                        time.sleep(5)
                     else:
                         break
                         
