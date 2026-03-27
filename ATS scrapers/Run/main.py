@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from postgres_export import push_to_postgres
 
 SCRAPER_IDLE_TIMEOUT = 1200  # 20 minutes allowed for silent heavy processing
+ABSOLUTE_TIMEOUT = 10800     # 3 hours absolute hard kill limit for massive ATS runs
 
 def find_scrapers():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -57,6 +58,7 @@ def run_scraper(scraper_name, scraper_path):
             env=env
         )
         
+        start_time_proc = time.time()
         last_output_time = [time.time()]
         
         def read_stdout():
@@ -73,9 +75,19 @@ def run_scraper(scraper_name, scraper_path):
         while True:
             if proc.poll() is not None:
                 break
-            if time.time() - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
+                
+            now = time.time()
+            if now - start_time_proc > ABSOLUTE_TIMEOUT:
+                print(f"\n   ⏰ [{scraper_name}] ABSOLUTE TIMEOUT: Sequence halted after {ABSOLUTE_TIMEOUT}s max limit. Killing infinite loop process.", flush=True)
+                proc.kill()
+                proc.wait() # Reap zombie
+                timeout_expired = True
+                break
+                
+            if now - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
                 print(f"\n   ⏰ [{scraper_name}] IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
                 proc.kill()
+                proc.wait() # Reap zombie
                 timeout_expired = True
                 break
             time.sleep(1)

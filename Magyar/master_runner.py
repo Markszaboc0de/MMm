@@ -15,8 +15,9 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
 from postgres_export import push_to_postgres
 
-# Max seconds a single scraper is allowed to run before being killed
+# Max seconds a single scraper is allowed to run without printing
 SCRAPER_TIMEOUT = 1200  # 20 minutes per module
+ABSOLUTE_TIMEOUT = 14400 # 4 hours absolute max limit
 
 
 def get_all_jobs_from_sqlite():
@@ -163,6 +164,7 @@ def run_all_modules():
                 bufsize=1
             )
             
+            start_time_proc = time.time()
             last_output_time = [time.time()]
             
             def read_stdout():
@@ -179,9 +181,21 @@ def run_all_modules():
             while True:
                 if proc.poll() is not None:
                     break
-                if time.time() - last_output_time[0] > SCRAPER_TIMEOUT:
+                    
+                now = time.time()
+                # Absolute max timeout
+                if now - start_time_proc > ABSOLUTE_TIMEOUT:
+                    print(f"\n   ⏰ [{module}] ABSOLUTE TIMEOUT after {ABSOLUTE_TIMEOUT}s running — killing heavily hanging process.", flush=True)
+                    proc.kill()
+                    proc.wait() # Reap zombie
+                    timeout_expired = True
+                    break
+                    
+                # Idle timeout
+                if now - last_output_time[0] > SCRAPER_TIMEOUT:
                     print(f"\n   ⏰ [{module}] IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
                     proc.kill()
+                    proc.wait() # Reap zombie
                     timeout_expired = True
                     break
                 time.sleep(1)
