@@ -116,8 +116,8 @@ def run_all_modules():
         print(f"⚠️ No scraper modules found in '{MODULES_FOLDER}/'.")
         return
 
-    MAX_WORKERS = 10
-    STAGGER_SECONDS = 60  # 1 minute between each worker launch
+    MAX_WORKERS = 4
+    STAGGER_SECONDS = 60  # (Legacy)
     print(f"📊 Found {len(modules)} modules to execute. Beginning parallel run ({MAX_WORKERS} workers, {STAGGER_SECONDS}s stagger)...\n")
     print("=" * 50)
 
@@ -136,8 +136,8 @@ def run_all_modules():
         module_path = os.path.join(MODULES_FOLDER, module)
         
         with launch_lock:
-            # Dynamic stagger based on CPU: Only slow down if CPU > 196%
-            while True:
+            # Dynamic stagger based on CPU: Limit to max 60s delay so we never halt indefinitely
+            for _ in range(6):
                 cpu_usage = get_cpu_utilization()
                 if cpu_usage > 196.0:
                     print(f"\n⏳ [{module}] CPU load high ({cpu_usage:.1f}%). Delaying launch 10s...", flush=True)
@@ -161,7 +161,8 @@ def run_all_modules():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                start_new_session=True
             )
             
             start_time_proc = time.time()
@@ -183,10 +184,12 @@ def run_all_modules():
                     break
                     
                 now = time.time()
+                import signal
+                
                 # Absolute max timeout
                 if now - start_time_proc > ABSOLUTE_TIMEOUT:
                     print(f"\n   ⏰ [{module}] ABSOLUTE TIMEOUT after {ABSOLUTE_TIMEOUT}s running — killing heavily hanging process.", flush=True)
-                    proc.kill()
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     proc.wait() # Reap zombie
                     timeout_expired = True
                     break
@@ -194,7 +197,7 @@ def run_all_modules():
                 # Idle timeout
                 if now - last_output_time[0] > SCRAPER_TIMEOUT:
                     print(f"\n   ⏰ [{module}] IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
-                    proc.kill()
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     proc.wait() # Reap zombie
                     timeout_expired = True
                     break

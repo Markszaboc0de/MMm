@@ -55,7 +55,8 @@ def run_scraper(scraper_name, scraper_path):
             text=True,
             bufsize=1,
             cwd=scrapers_dir,
-            env=env
+            env=env,
+            start_new_session=True
         )
         
         start_time_proc = time.time()
@@ -76,17 +77,18 @@ def run_scraper(scraper_name, scraper_path):
             if proc.poll() is not None:
                 break
                 
+            import signal
             now = time.time()
             if now - start_time_proc > ABSOLUTE_TIMEOUT:
                 print(f"\n   ⏰ [{scraper_name}] ABSOLUTE TIMEOUT: Sequence halted after {ABSOLUTE_TIMEOUT}s max limit. Killing infinite loop process.", flush=True)
-                proc.kill()
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                 proc.wait() # Reap zombie
                 timeout_expired = True
                 break
                 
             if now - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
                 print(f"\n   ⏰ [{scraper_name}] IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
-                proc.kill()
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                 proc.wait() # Reap zombie
                 timeout_expired = True
                 break
@@ -219,7 +221,7 @@ if __name__ == "__main__":
     if len(args) == 0 or args[0].lower() == "all":
         print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
-        MAX_WORKERS = 10
+        MAX_WORKERS = 4
         db_lock = threading.Lock()
         
         launch_lock = threading.Lock()
@@ -229,8 +231,8 @@ if __name__ == "__main__":
             scraper_path = scrapers[scraper_name]
             
             with launch_lock:
-                # Dynamic stagger based on CPU: Only slow down if CPU > 196%
-                while True:
+                # Dynamic stagger based on CPU: Limit to max 60s delay so we never halt indefinitely
+                for _ in range(6):
                     cpu_usage = get_cpu_utilization()
                     if cpu_usage > 194.0:
                         print(f"\n⏳ [{scraper_name}] CPU load high ({cpu_usage:.1f}%). Delaying launch 10s...", flush=True)
