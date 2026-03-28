@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from postgres_export import push_to_postgres
 
 SCRAPER_IDLE_TIMEOUT = 1200  # 20 minutes allowed for silent heavy processing
-ABSOLUTE_TIMEOUT = 10800     # 3 hours absolute hard kill limit for massive ATS runs
+ABSOLUTE_TIMEOUT = float('inf')     # User requested no hard limits for massive ATS runs
 
 def find_scrapers():
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

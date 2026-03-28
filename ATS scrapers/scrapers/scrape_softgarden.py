@@ -2,6 +2,8 @@ import os
 import requests
 import time
 import json
+import threading
+import concurrent.futures
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from core.base_scraper import BaseScraper
@@ -17,6 +19,7 @@ class SoftgardenScraper:
         self.targets_path = os.path.join(self.script_dir, TARGETS_FILE)
 
         self.db_saver = BaseScraper(db_name=self.db_path)
+        self.db_lock = threading.Lock()
         print("   ⚡ Initializing Softgarden Scraper...")
 
     def load_targets(self):
@@ -64,12 +67,13 @@ class SoftgardenScraper:
                     continue
 
                 saved_count = 0
-
-                for job_url in job_links:
+                
+                def process_job_link(job_url):
+                    nonlocal saved_count
                     try:
                         job_res = requests.get(job_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=10)
                         if job_res.status_code != 200:
-                            continue
+                            return
                             
                         job_res.encoding = 'utf-8'
                         job_soup = BeautifulSoup(job_res.text, 'html.parser')
@@ -86,7 +90,6 @@ class SoftgardenScraper:
                                 data = json.loads(ld_json.string)
                                 title = data.get('title', 'Unknown')
                                 
-                                # Sometimes desc is in html
                                 raw_desc = data.get('description', '')
                                 if raw_desc:
                                     desc_soup = BeautifulSoup(raw_desc, 'html.parser')
@@ -108,27 +111,28 @@ class SoftgardenScraper:
                             except json.JSONDecodeError:
                                 pass
                         
-                        # Fallback if title lacks ld-json
                         if title == "Unknown" and job_soup.title:
                             title = job_soup.title.text.strip()
                             
-                        saved = self.db_saver.save_job({
-                            "url": job_url,
-                            "title": title,
-                            "company": company_name,
-                            "location_raw": raw_location,
-                            "city": city,
-                            "country": country,
-                            "description": description
-                        })
+                        with self.db_lock:
+                            saved = self.db_saver.save_job({
+                                "url": job_url,
+                                "title": title,
+                                "company": company_name,
+                                "location_raw": raw_location,
+                                "city": city,
+                                "country": country,
+                                "description": description
+                            })
 
-                        if saved:
-                            saved_count += 1
-                            
+                            if saved:
+                                saved_count += 1
+                                
                     except Exception as e:
                         print(f"   ❌ Error fetching job {job_url}: {e}")
-                        
-                    time.sleep(0.5)
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    executor.map(process_job_link, job_links)
 
                 print(f"   ✅ +{saved_count} new jobs saved")
                 total_new_jobs += saved_count

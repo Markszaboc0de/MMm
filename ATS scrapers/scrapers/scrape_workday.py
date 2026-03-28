@@ -3,6 +3,8 @@ import sys
 import requests
 import time
 from urllib.parse import urlparse
+import threading
+import concurrent.futures
 
 # Ensure Python can find the 'core' module
 _ats_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # ATS scrapers/
@@ -25,6 +27,7 @@ class WorkdayScraper:
         self.targets_path = os.path.join(self.script_dir, TARGETS_FILE)
 
         self.db_saver = BaseScraper(db_name=self.db_path)
+        self.db_lock = threading.Lock()
         print("   ⚡ Initializing Workday Scraper...")
 
     def load_targets(self):
@@ -148,14 +151,16 @@ class WorkdayScraper:
                     print(f"   ⚠️ 0 jobs found for {company_name}.")
                     continue
                     
-                print(f"   Found {len(jobs)} jobs. Fetching details and saving...")
+                print(f"   Found {len(jobs)} jobs. Fetching details and saving in parallel...")
                 
                 saved_for_company = 0
-                for i, job in enumerate(jobs):
-                    if i > 0 and i % 20 == 0:
-                        print(f"      ...processed {i}/{len(jobs)} jobs for {company_name}...", flush=True)
-                        
-                    external_path = job.get('externalPath', '')
+                processed_count = 0
+                count_lock = threading.Lock()
+                
+                def process_job(job_data):
+                    nonlocal saved_for_company, processed_count
+                    
+                    external_path = job_data.get('externalPath', '')
                     parts = external_path.strip('/').split('/')
                     job_slug = parts[-1] if parts else None
                     
@@ -163,25 +168,34 @@ class WorkdayScraper:
                     
                     details = self.fetch_job_details(api_base, job_slug) or {}
                     
-                    city = details.get('city')
+                    city = details.get('city', 'Unknown')
                     if not city: city = "Unknown"
-                    country = details.get('country')
+                    country = details.get('country', 'Unknown')
                     if not country: country = "Unknown"
-                    desc = details.get('description')
+                    desc = details.get('description', 'Description not provided')
                     if not desc: desc = "Description not provided"
                     
-                    saved = self.db_saver.save_job({
-                        "url": job_url,
-                        "title": job.get('title', 'Unknown'),
-                        "company": company_name,
-                        "location_raw": city,
-                        "city": city,
-                        "country": country,
-                        "description": desc
-                    })
-                    
-                    if saved:
-                        saved_for_company += 1
+                    with self.db_lock:
+                        saved = self.db_saver.save_job({
+                            "url": job_url,
+                            "title": job_data.get('title', 'Unknown'),
+                            "company": company_name,
+                            "location_raw": city,
+                            "city": city,
+                            "country": country,
+                            "description": desc
+                        })
+                        
+                        processed_count += 1
+                        if processed_count > 0 and processed_count % 20 == 0:
+                            print(f"      ...processed {processed_count}/{len(jobs)} jobs for {company_name}...", flush=True)
+                            
+                        if saved:
+                            saved_for_company += 1
+
+                # Use 5 parallel workers per company to fetch details fast without aggressively triggering rate limits
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    executor.map(process_job, jobs)
                         
                 print(f"   ✅ Processed {saved_for_company} NEW jobs for {company_name}.")
                 total_saved += saved_for_company
