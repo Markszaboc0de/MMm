@@ -112,7 +112,7 @@ def run_all_modules():
         print(f"⚠️ No scraper modules found in '{MODULES_FOLDER}/'.")
         return
 
-    MAX_WORKERS = 10
+    MAX_WORKERS = 4
     STAGGER_SECONDS = 60  # (legacy)
     print(f"📊 Found {len(modules)} modules to execute. Beginning parallel run ({MAX_WORKERS} workers, {STAGGER_SECONDS}s stagger)...\n")
     print("=" * 50)
@@ -132,14 +132,6 @@ def run_all_modules():
         module_path = os.path.join(MODULES_FOLDER, module)
         
         with launch_lock:
-            while True:
-                cpu_usage = get_cpu_utilization()
-                if cpu_usage > 160.0:
-                    print(f"\n⏳ [{module}] CPU load high ({cpu_usage:.1f}%). Delaying launch until resources free up...", flush=True)
-                    time.sleep(5)
-                else:
-                    break
-                    
             # Minimal 2-second stagger to prevent instant I/O race conditions
             now = time.time()
             elapsed = now - last_launch_time[0]
@@ -183,20 +175,24 @@ def run_all_modules():
                 # Absolute max timeout
                 if now - start_time_proc > ABSOLUTE_TIMEOUT:
                     print(f"\n   ⏰ [{module}] ABSOLUTE TIMEOUT after {ABSOLUTE_TIMEOUT}s running — killing heavily hanging process.", flush=True)
-                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                    proc.wait() # Reap zombie
                     timeout_expired = True
                     break
                     
                 # Idle timeout
                 if now - last_output_time[0] > SCRAPER_TIMEOUT:
                     print(f"\n   ⏰ [{module}] IDLE TIMEOUT after {SCRAPER_TIMEOUT}s of zero output — killing process.", flush=True)
-                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                    proc.wait() # Reap zombie
                     timeout_expired = True
                     break
                 time.sleep(1)
                 
+            # 🧹 METICULOUS CLEANUP: Always nuke the process group regardless of how it exited.
+            try:
+                import signal
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except Exception:
+                pass
+                
+            proc.wait() # Reap the main Python zombie
             t.join(timeout=2)
 
             with count_lock:

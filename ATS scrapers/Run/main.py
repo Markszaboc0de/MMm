@@ -81,19 +81,23 @@ def run_scraper(scraper_name, scraper_path):
             now = time.time()
             if now - start_time_proc > ABSOLUTE_TIMEOUT:
                 print(f"\n   ⏰ [{scraper_name}] ABSOLUTE TIMEOUT: Sequence halted after {ABSOLUTE_TIMEOUT}s max limit. Killing infinite loop process.", flush=True)
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                proc.wait() # Reap zombie
                 timeout_expired = True
                 break
                 
             if now - last_output_time[0] > SCRAPER_IDLE_TIMEOUT:
                 print(f"\n   ⏰ [{scraper_name}] IDLE TIMEOUT: Sequence halted after {SCRAPER_IDLE_TIMEOUT}s of zero output. Killing hung process.", flush=True)
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                proc.wait() # Reap zombie
                 timeout_expired = True
                 break
             time.sleep(1)
             
+        # 🧹 METICULOUS CLEANUP: Always nuke the process group regardless of how it exited.
+        try:
+            import signal
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except Exception:
+            pass
+            
+        proc.wait() # Reap the main Python zombie
         t.join(timeout=2)
         
         if timeout_expired:
@@ -221,7 +225,7 @@ if __name__ == "__main__":
     if len(args) == 0 or args[0].lower() == "all":
         print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
-        MAX_WORKERS = 10
+        MAX_WORKERS = 5
         db_lock = threading.Lock()
         
         launch_lock = threading.Lock()
@@ -231,14 +235,6 @@ if __name__ == "__main__":
             scraper_path = scrapers[scraper_name]
             
             with launch_lock:
-                while True:
-                    cpu_usage = get_cpu_utilization()
-                    if cpu_usage > 160.0:
-                        print(f"\n⏳ [{scraper_name}] CPU load high ({cpu_usage:.1f}%). Delaying launch until resources free up...", flush=True)
-                        time.sleep(5)
-                    else:
-                        break
-                        
                 # Minimal 2-second stagger to prevent instant I/O race conditions
                 now = time.time()
                 elapsed = now - last_launch_time[0]
