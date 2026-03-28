@@ -17,7 +17,7 @@ from postgres_export import push_to_postgres
 
 # Max seconds a single scraper is allowed to run without printing
 SCRAPER_TIMEOUT = 1200  # 20 minutes per module
-ABSOLUTE_TIMEOUT = 14400 # 4 hours absolute max limit
+ABSOLUTE_TIMEOUT = 3600 # 1 hour absolute max limit
 
 
 def get_all_jobs_from_sqlite():

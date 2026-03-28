@@ -58,8 +58,14 @@ def run_scraper():
         current_page_url = BASE_URL
         page_num = 1
         total_jobs_added = 0
+        seen_page_urls = set()
 
         while current_page_url:
+            if current_page_url in seen_page_urls:
+                print(f"   ⚠️ Végtelen ciklust észleltünk a lapozásban (ismétlődő URL: {current_page_url}). Kilépés.")
+                break
+            seen_page_urls.add(current_page_url)
+            
             print(f"\n   📄 {page_num}. oldal letapogatása: {current_page_url}")
 
             # Próbáljuk meg letölteni az oldalt, ha beszakad a hálózat, újrapróbáljuk!
