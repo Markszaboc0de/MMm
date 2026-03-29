@@ -286,8 +286,8 @@ def main():
             
     total_scrapers = len(tasks)
     
-    # Execute 3 scrapers simultaneously to prevent CPU/RAM exhaustion on standard VMs
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    # Execute 1 scraper at a time to prevent CPU/RAM exhaustion and Chrome crashes on standard VMs
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
         
         for future in concurrent.futures.as_completed(futures):

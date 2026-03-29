@@ -88,12 +88,36 @@ class HrMasterScraper:
                         let results = [];
                         let processedPaths = new Set();
                         
-                        let elements = document.querySelectorAll('a[href*="/JobAdvertisement/"], [ng-click*="/JobAdvertisement/"]');
+                        // Option 1: Find social share buttons (New Position Format heavily adopted by HRMaster)
+                        let shareButtons = document.querySelectorAll('a[href*="facebook.com/sharer"]');
+                        shareButtons.forEach(btn => {
+                            let fbUrl = btn.getAttribute('href');
+                            let match = fbUrl.match(/[?&]u=([^&]+)/);
+                            if (match && match[1]) {
+                                let urlPath = decodeURIComponent(match[1]);
+                                if (!processedPaths.has(urlPath)) {
+                                    processedPaths.add(urlPath);
+                                    
+                                    let title = "Unknown Position";
+                                    let card = btn.closest('div[class*="Card"], div[class*="Item"], div.panel, tr, li');
+                                    if (card) {
+                                        let header = card.querySelector('.positionCard__title, h1, h2, h3, h4, [class*="Header"], [class*="Title"], strong');
+                                        if (header) title = (header.innerText || "").trim();
+                                    }
+                                    
+                                    results.push({ title: title, url_path: urlPath });
+                                }
+                            }
+                        });
+                        
+                        // Option 2: Legacy fallback format and direct hrefs
+                        let elements = document.querySelectorAll('a[href*="/JobAdvertisement/"], [ng-click*="/JobAdvertisement/"], a[href*="/Position/"], [ng-click*="/Position/"]');
                         
                         elements.forEach(el => {
                             let urlPath = "";
                             if (el.hasAttribute('href')) {
                                 urlPath = el.getAttribute('href');
+                                if (urlPath.includes('facebook.com')) return;
                             } else {
                                 let match = el.getAttribute('ng-click').match(/,\\s*["']([^"']+)["']/);
                                 if (match && match[1]) urlPath = match[1];
@@ -107,7 +131,7 @@ class HrMasterScraper:
                                 if (badTitles.includes(title.toLowerCase())) {
                                     let card = el.closest('div[class*="Card"], div[class*="Item"], div.panel, tr, li');
                                     if (card) {
-                                        let header = card.querySelector('h1, h2, h3, h4, [class*="Header"], [class*="Title"], strong');
+                                        let header = card.querySelector('.positionCard__title, h1, h2, h3, h4, [class*="Header"], [class*="Title"], strong');
                                         if (header) title = (header.innerText || "").trim();
                                     }
                                 }
