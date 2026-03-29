@@ -123,6 +123,9 @@ def get_expected_db_filename(module_path):
 
         m3 = re.search(r'sqlite3\.connect\(\s*["\']([^"\']+\.(?:db|sqlite))["\']', content)
         if m3: return os.path.basename(m3.group(1)).lower()
+        
+        m4 = re.search(r'DB_FILE\s*=\s*["\'].*?([^/"\']+\.(?:db|sqlite))["\']', content)
+        if m4: return os.path.basename(m4.group(1)).lower()
     except:
         pass
     return None
