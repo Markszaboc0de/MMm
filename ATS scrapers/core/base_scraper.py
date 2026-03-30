@@ -75,7 +75,7 @@ class BaseScraper:
     def _setup_database(self):
         try:
             os.makedirs(os.path.dirname(os.path.abspath(self.db_name)), exist_ok=True)
-            conn = sqlite3.connect(self.db_name)
+            conn = sqlite3.connect(self.db_name, timeout=15.0)
             cursor = conn.cursor()
             # Added 'description' column
             cursor.execute('''
@@ -107,14 +107,14 @@ class BaseScraper:
         except Exception:
             return None
 
-    def save_job(self, job_data):
+    def save_job(self, job_data, retry_count=0):
         if not job_data:
             return False
 
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
         saved = False
         try:
+            conn = sqlite3.connect(self.db_name, timeout=15.0)
+            cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO jobs (url, title, company, location_raw, city, country, description)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -132,9 +132,14 @@ class BaseScraper:
             saved = True
         except sqlite3.IntegrityError:
             pass
-        except sqlite3.OperationalError:
-            self._setup_database()
-            return self.save_job(job_data)
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e).lower() and retry_count < 3:
+                time.sleep(1)
+                return self.save_job(job_data, retry_count + 1)
+            else:
+                self._setup_database()
+                if retry_count == 0:
+                    return self.save_job(job_data, 1)
         finally:
             conn.close()
         return saved

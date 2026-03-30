@@ -225,7 +225,7 @@ if __name__ == "__main__":
     if len(args) == 0 or args[0].lower() == "all":
         print("Running ALL ATS scrapers in parallel (10 workers, 60s stagger)...")
         import concurrent.futures
-        MAX_WORKERS = 5
+        MAX_WORKERS = 10
         db_lock = threading.Lock()
         
         launch_lock = threading.Lock()

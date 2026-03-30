@@ -238,21 +238,22 @@ class HrMasterScraper:
                         final_title = page_data.get(
                             'exact_title') or job['title']
 
-                        # Save to database OR Update existing rows that had bad titles
                         try:
-                            conn = sqlite3.connect(self.db_path)
+                            # Added timeout to prevent SQLite 'database is locked' errors during parallel execution
+                            conn = sqlite3.connect(self.db_path, timeout=15.0)
                             cursor = conn.cursor()
 
                             # Using ON CONFLICT to overwrite the title if the URL already exists
+                            # REMOVED 'category' as it does not exist in the base ATS schema
                             cursor.execute("""
-                                INSERT INTO jobs (url, title, company, location_raw, city, country, description, category)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                INSERT INTO jobs (url, title, company, location_raw, city, country, description)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
                                 ON CONFLICT(url) DO UPDATE SET 
                                 title=excluded.title, 
                                 description=excluded.description,
                                 city=excluded.city,
                                 location_raw=excluded.location_raw
-                            """, (full_job_url, final_title, company_name, page_data['location'], city, "Hungary", clean_desc, "General"))
+                            """, (full_job_url, final_title, company_name, page_data['location'], city, "Hungary", clean_desc))
 
                             # Check if a new row was added or an old row was updated
                             if cursor.rowcount > 0:
