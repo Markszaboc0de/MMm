@@ -9,6 +9,7 @@ from datetime import datetime
 import threading
 import concurrent.futures
 import re
+import urllib.request
 
 # Root directory of the project (parent of Check folder)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,29 @@ TARGETS = [
 
 TIMEOUT_SECONDS = 600  # 10 minutes to allow ATS scrapers to traverse all targets
 RESULTS_CSV = os.path.join(BASE_DIR, "Check", "health_check_results.csv")
+
+def send_notification(successful, total, runtime_seconds):
+    try:
+        topic_url = "https://ntfy.sh/resumatch_scraper_alerts"
+        minutes = int(runtime_seconds // 60)
+        seconds = int(runtime_seconds % 60)
+        time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+        
+        status = "SUCCESS" if successful == total else "OBSTACLES DETECTED"
+        message = f"Health Check Complete: {status}\n{successful}/{total} scrapers working.\nRuntime: {time_str}"
+        
+        req = urllib.request.Request(
+            topic_url,
+            data=message.encode('utf-8'),
+            headers={
+                "Title": "Scraper Health Check",
+                "Tags": "stethoscope,robot"
+            }
+        )
+        urllib.request.urlopen(req, timeout=5)
+        print("📲 Push notification sent to your phone/browser!")
+    except Exception as e:
+        print(f"   ❌ Failed to send push notification: {e}")
 
 def clean_data_folder(data_path):
     """Deletes all .db and .sqlite files in the targeted data directory."""
@@ -244,6 +268,8 @@ def main():
         print("❌ Failed:")
         for fail in failed_scrapers:
             print(f"  - {fail}")
+            
+    send_notification(successful_scrapers, total_scrapers, total_time)
             
 if __name__ == "__main__":
     main()
