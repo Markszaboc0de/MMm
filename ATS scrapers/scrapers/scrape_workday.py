@@ -194,6 +194,9 @@ class WorkdayScraper:
                             saved_for_company += 1
 
                 # Use 5 parallel workers per company to fetch details fast without aggressively triggering rate limits
+                if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                    jobs = jobs[:1]
+
                 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                     executor.map(process_job, jobs)
                         

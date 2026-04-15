@@ -94,6 +94,8 @@ class PersonioXmlScraper:
 
                     if self.db_saver.save_job(job_dict):
                         saved_for_company += 1
+                        if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                            break
 
                 print(f"   ✅ Saved {saved_for_company} new jobs.")
                 total_saved += saved_for_company

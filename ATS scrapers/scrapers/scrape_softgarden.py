@@ -131,6 +131,9 @@ class SoftgardenScraper:
                     except Exception as e:
                         print(f"   ❌ Error fetching job {job_url}: {e}")
 
+                if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                    job_links = list(job_links)[:1]
+
                 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                     executor.map(process_job_link, job_links)
 

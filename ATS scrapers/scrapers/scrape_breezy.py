@@ -114,6 +114,9 @@ class BreezyApiScraper:
                     f"   ⚡ Found {len(jobs_list)} jobs. Downloading deep descriptions...")
                 saved_for_company = 0
 
+                if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                    jobs_list = jobs_list[:1]
+
                 # Multithread the HTML fetching so it runs extremely fast
                 with ThreadPoolExecutor(max_workers=10) as executor:
                     futures = [executor.submit(

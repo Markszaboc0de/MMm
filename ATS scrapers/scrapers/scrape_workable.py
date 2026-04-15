@@ -145,6 +145,8 @@ class WorkableApiScraper:
 
                     if saved:
                         saved_count += 1
+                        if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                            break
 
                 if saved_count > 0:
                     print(

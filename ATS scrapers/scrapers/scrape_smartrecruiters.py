@@ -149,6 +149,8 @@ class SmartRecruitersApiScraper:
 
                     all_jobs.extend(jobs_page)
                     offset += 100
+                    if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                        break
                     time.sleep(0.5)
 
                 except Exception as e:
@@ -162,6 +164,9 @@ class SmartRecruitersApiScraper:
             print(
                 f"   ⚡ Found {len(all_jobs)} TOTAL jobs. Multithreading descriptions...")
             saved_count = 0
+
+            if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                all_jobs = all_jobs[:1]
 
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(

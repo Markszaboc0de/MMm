@@ -238,6 +238,8 @@ class GreenhouseAdapter:
                     })
                     if saved:
                         count += 1
+                        if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                            break
                 return count
             return 0
         except Exception as e:
@@ -280,6 +282,8 @@ class GreenhouseAdapter:
                 })
                 if saved:
                     count += 1
+                    if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                        break
         return count
 
 

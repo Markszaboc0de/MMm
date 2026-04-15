@@ -264,6 +264,9 @@ class HrMasterScraper:
                         except Exception as e:
                             print(f"      ⚠️ Database error: {e}")
 
+                        if os.environ.get("HEALTH_CHECK_MODE") == "1" and saved_for_company >= 1:
+                            break
+
                     print(
                         f"   ✅ Processed {saved_for_company} jobs (New & Updated).")
                     total_saved += saved_for_company

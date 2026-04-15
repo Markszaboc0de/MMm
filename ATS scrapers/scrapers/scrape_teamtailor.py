@@ -92,6 +92,8 @@ class TeamtailorScraper:
 
                     if saved:
                         saved_count += 1
+                        if os.environ.get("HEALTH_CHECK_MODE") == "1":
+                            break
 
                 print(f"   ✅ +{saved_count} new jobs saved")
                 total_new_jobs += saved_count
