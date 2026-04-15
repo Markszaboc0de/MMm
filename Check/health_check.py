@@ -230,7 +230,7 @@ def main():
             t, m = futures[future]
             try:
                 if future.result():
-                    successful_scrapers += 1
+                    successful_scrapers += 1  # type: ignore
                 else:
                     failed_scrapers.append(f"[{t['name']}] {m}")
             except Exception:
