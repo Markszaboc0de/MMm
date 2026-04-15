@@ -225,7 +225,7 @@ def main():
     failed_scrapers = []
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}
+        futures = {executor.submit(run_test, t, m, csv_lock): (t, m) for t, m in tasks}  # type: ignore
         for future in concurrent.futures.as_completed(futures):
             t, m = futures[future]
             try:
