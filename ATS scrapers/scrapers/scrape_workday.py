@@ -153,12 +153,11 @@ class WorkdayScraper:
                     
                 print(f"   Found {len(jobs)} jobs. Fetching details and saving in parallel...")
                 
-                saved_for_company = 0
-                processed_count = 0
+                saved_for_company = [0]
+                processed_count = [0]
                 count_lock = threading.Lock()
                 
                 def process_job(job_data):
-                    nonlocal saved_for_company, processed_count
                     
                     external_path = job_data.get('externalPath', '')
                     parts = external_path.strip('/').split('/')
@@ -186,22 +185,22 @@ class WorkdayScraper:
                             "description": desc
                         })
                         
-                        processed_count += 1
-                        if processed_count > 0 and processed_count % 20 == 0:
-                            print(f"      ...processed {processed_count}/{len(jobs)} jobs for {company_name}...", flush=True)
+                        processed_count[0] += 1
+                        if processed_count[0] > 0 and processed_count[0] % 20 == 0:
+                            print(f"      ...processed {processed_count[0]}/{len(jobs)} jobs for {company_name}...", flush=True)
                             
                         if saved:
-                            saved_for_company += 1
+                            saved_for_company[0] += 1
 
                 # Use 5 parallel workers per company to fetch details fast without aggressively triggering rate limits
-                if os.environ.get("HEALTH_CHECK_MODE") == "1":
-                    jobs = jobs[:1]
+                if os.environ.get("HEALTH_CHECK_MODE") == "1" and jobs:
+                    jobs = [jobs[0]]
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                     executor.map(process_job, jobs)
                         
-                print(f"   ✅ Processed {saved_for_company} NEW jobs for {company_name}.")
-                total_saved += saved_for_company
+                print(f"   ✅ Processed {saved_for_company[0]} NEW jobs for {company_name}.")
+                total_saved += saved_for_company[0]
                 
                 time.sleep(1)
                 

@@ -66,10 +66,9 @@ class SoftgardenScraper:
                     print(f"   ⚠️ 0 jobs found on vacancies page.")
                     continue
 
-                saved_count = 0
+                saved_count = [0]
                 
                 def process_job_link(job_url):
-                    nonlocal saved_count
                     try:
                         job_res = requests.get(job_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}, timeout=10)
                         if job_res.status_code != 200:
@@ -126,19 +125,20 @@ class SoftgardenScraper:
                             })
 
                             if saved:
-                                saved_count += 1
+                                saved_count[0] += 1
                                 
                     except Exception as e:
                         print(f"   ❌ Error fetching job {job_url}: {e}")
 
-                if os.environ.get("HEALTH_CHECK_MODE") == "1":
-                    job_links = list(job_links)[:1]
+                if os.environ.get("HEALTH_CHECK_MODE") == "1" and job_links:
+                    first_link = next(iter(job_links))
+                    job_links = {first_link}
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                     executor.map(process_job_link, job_links)
 
-                print(f"   ✅ +{saved_count} new jobs saved")
-                total_new_jobs += saved_count
+                print(f"   ✅ +{saved_count[0]} new jobs saved")
+                total_new_jobs += saved_count[0]
 
             except Exception as e:
                 print(f"   ❌ Error fetching {company_name}: {e}")

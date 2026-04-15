@@ -165,8 +165,8 @@ class SmartRecruitersApiScraper:
                 f"   ⚡ Found {len(all_jobs)} TOTAL jobs. Multithreading descriptions...")
             saved_count = 0
 
-            if os.environ.get("HEALTH_CHECK_MODE") == "1":
-                all_jobs = all_jobs[:1]
+            if os.environ.get("HEALTH_CHECK_MODE") == "1" and all_jobs:
+                all_jobs = [all_jobs[0]]
 
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(
