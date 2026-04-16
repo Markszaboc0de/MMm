@@ -44,7 +44,6 @@ def init_db():
 
 def create_driver():
     """Tiszta böngésző opciók minden indításkor a memóriaszivárgás ellen"""
-    options.add_argument("--disable-blink-features=AutomationControlled")
     return webdriver.Chrome(options=options)
 
 

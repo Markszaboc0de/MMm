@@ -51,7 +51,6 @@ def init_db():
 
 def create_driver():
     """Creates fresh options for every launch to prevent 'options reuse' crashes"""
-    options.add_argument("--disable-blink-features=AutomationControlled")
     return webdriver.Chrome(options=options)
 
 

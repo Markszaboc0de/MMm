@@ -76,7 +76,6 @@ def run_scraper():
     init_db()
     print(f"🚀 Indul a {COMPANY_NAME} HRMaster scraper...")
 
-    options.add_argument("--disable-popup-blocking")
     driver = get_chrome_driver()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

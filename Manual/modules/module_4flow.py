@@ -1,4 +1,7 @@
-import undetected_chromedriver as uc
+import sys as _sys
+import os as _os
+_sys.path.append(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+from driver_setup import get_chrome_driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -62,11 +65,7 @@ def init_db():
 
 
 def create_driver():
-    options = uc.ChromeOptions()
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument('--blink-settings=imagesEnabled=false')
-    return uc.Chrome(options=options, version_main=145)
+    return get_chrome_driver()
 
 
 def run_scraper():
