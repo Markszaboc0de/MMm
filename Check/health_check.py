@@ -36,7 +36,7 @@ TARGETS = [
     }
 ]
 
-TIMEOUT_SECONDS = 600  # 10 minutes to allow ATS scrapers to traverse all targets
+TIMEOUT_SECONDS = 180  # 3 minutes maximum timeout for each website/scraper
 RESULTS_CSV = os.path.join(BASE_DIR, "Check", "health_check_results.csv")
 
 def send_notification(successful, total, runtime_seconds):
@@ -138,6 +138,8 @@ def run_test(target, module, csv_lock):
     expected_db = get_expected_db_filename(module_path)
     base_name = module.replace("module_", "").replace("scrape_", "").replace(".py", "").lower()
     
+    error_reason = ""
+    
     try:
         env = os.environ.copy()
         target_root = os.path.dirname(target["cwd"]) if is_ats else target["cwd"]
@@ -170,9 +172,17 @@ def run_test(target, module, csv_lock):
         t2.start()
 
         while True:
+            elapsed_total = time.time() - start_time
+            if elapsed_total > 180:
+                print(f"   ⏰ TIMEOUT (3 minutes reached) for {module}. Killing process.")
+                error_reason = "Timeout (> 180s)"
+                process.terminate()
+                break
+
             elapsed_idle = time.time() - last_output_time[0]
             if elapsed_idle > TIMEOUT_SECONDS:
                 print(f"   ⏰ IDLE TIMEOUT ({TIMEOUT_SECONDS}s of no output) for {module}. Killing process.")
+                error_reason = f"Idle Timeout (> {TIMEOUT_SECONDS}s)"
                 process.terminate()
                 break
                 
@@ -191,21 +201,28 @@ def run_test(target, module, csv_lock):
                 process.terminate()
                 break
                 
-            # For ATS, wait until the process finishes (it will hit 1 job per site and terminate naturally)
             if process.poll() is not None:
                 if is_ats and job_found:
                     print(f"   🎯 ATS {module} finished successfully!")
                 elif process.poll() != 0:
                     print(f"   ❌ Process {module} exited with code {process.poll()}.")
+                    err_lines = [line.strip() for line in stderr_data if line.strip()]
+                    if err_lines:
+                        # Grab the last non-empty line from stderr as error reason
+                        error_reason = f"Exit {process.poll()}: {err_lines[-1][:200]}"
+                    else:
+                        error_reason = f"Exit Code {process.poll()}"
                 else:
                     if not job_found:
                         print(f"   ❌ {module} finished normally but 0 jobs found.")
+                        error_reason = "Finished normally, 0 jobs found"
                 break
                 
             time.sleep(1)
             
     except Exception as e:
         print(f"   ❌ Error starting process {module}: {e}")
+        error_reason = f"Error: {str(e)[:100]}"
         
     try: process.kill()
     except: pass
@@ -214,10 +231,10 @@ def run_test(target, module, csv_lock):
         with open(RESULTS_CSV, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             if job_found:
-                writer.writerow([target["name"], module, "SUCCESS", f"{time.time() - start_time:.1f}"])
+                writer.writerow([target["name"], module, "SUCCESS", f"{time.time() - start_time:.1f}", ""])
                 return True
             else:
-                writer.writerow([target["name"], module, "FAILED", f"{time.time() - start_time:.1f}"])
+                writer.writerow([target["name"], module, "FAILED", f"{time.time() - start_time:.1f}", error_reason])
                 return False
 
 def main():
@@ -229,7 +246,7 @@ def main():
     
     with open(RESULTS_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(["Module Category", "Module Name", "Status", "Time Taken (s)"])
+        writer.writerow(["Module Category", "Module Name", "Status", "Time Taken (s)", "Error Log"])
 
     for target in TARGETS:
         clean_data_folder(target["data_path"])
