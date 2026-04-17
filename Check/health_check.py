@@ -257,7 +257,14 @@ def main():
     for target in TARGETS:
         if not os.path.exists(target["modules_path"]):
             continue
-        modules = sorted([f for f in os.listdir(target["modules_path"]) if f.endswith('.py') and not f.startswith('__') and "core" not in f.lower() and "base" not in f.lower()])
+        modules = sorted([
+            f for f in os.listdir(target["modules_path"]) 
+            if f.endswith('.py') 
+            and not f.startswith('__') 
+            and "core" not in f.lower() 
+            and "base" not in f.lower()
+            and f != "extract!!.py"
+        ])
         for module in modules:
             tasks.append((target, module))
             

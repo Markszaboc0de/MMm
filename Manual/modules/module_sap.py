@@ -12,7 +12,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "SAP"
 BASE_URL = "https://jobs.sap.com/search/"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "sap_jobs.db")
 
 # A célzott karrier szintek (URL paraméterként küldjük be)

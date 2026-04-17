@@ -95,4 +95,20 @@ def get_chrome_driver() -> webdriver.Chrome:
                     f"Manager error: {e}"
                 )
 
+    import time
+    from selenium.common.exceptions import WebDriverException
+
+    for attempt in range(1, 4):
+        try:
+            return webdriver.Chrome(service=service, options=options)
+        except WebDriverException as e:
+            if "Can not connect to the Service" in str(e) or "DevToolsActivePort" in str(e):
+                if attempt < 3:
+                    print(f"   ⚠️ Chrome Service blocked or under heavy load. Retrying in {attempt * 3}s... ({attempt}/3)")
+                    time.sleep(attempt * 3)
+                else:
+                    raise e
+            else:
+                raise e
+    
     return webdriver.Chrome(service=service, options=options)
