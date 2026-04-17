@@ -60,7 +60,7 @@ def init_db():
 
 
 def create_driver():
-    return webdriver.Chrome(options=options)
+    return get_chrome_driver()
 
 
 def parse_job_date(text):

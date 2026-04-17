@@ -44,7 +44,7 @@ def init_db():
 
 def create_driver():
     """Tiszta böngésző opciók minden indításkor a memóriaszivárgás ellen"""
-    return webdriver.Chrome(options=options)
+    return get_chrome_driver()
 
 
 def run_scraper():

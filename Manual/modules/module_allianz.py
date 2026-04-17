@@ -51,7 +51,7 @@ def init_db():
 
 def create_driver():
     """Creates fresh options for every launch to prevent 'options reuse' crashes"""
-    return webdriver.Chrome(options=options)
+    return get_chrome_driver()
 
 
 def run_scraper():
