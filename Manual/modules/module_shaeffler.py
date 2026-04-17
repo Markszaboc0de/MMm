@@ -76,8 +76,6 @@ def run_scraper():
     init_db()
     print(
         f"🚀 Starting {COMPANY_NAME} Scraper (Ultimate Content Extractor Mode)...")
-
-        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     driver = get_chrome_driver()
 
     job_links = []
