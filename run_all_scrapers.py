@@ -59,45 +59,61 @@ def main():
     # Base directory of this script (Magyar-Manual-main)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 🧹 Clear PostgreSQL and local SQLite caches before starting so jobs aren't continuously duplicated
-    from postgres_export import clear_postgres_table
-    print("\n" + "="*50)
-    print("🧹 PRE-FLIGHT: Wiping databases for a fresh run...")
-    print("="*50)
-    clear_postgres_table()
-    clear_local_databases(base_dir)
-    print("✅ Databases cleared!\n")
-    
-    # 💿 Auto disk cleanup — clears Chromium tmp, journal logs, old snap revisions
-    try:
-        import cleanup_disk
-        cleanup_disk.main()
-    except Exception as e:
-        print(f"⚠️ Disk cleanup skipped: {e}")
-    
-    # Define the scripts to run and their desired working directories (fastest first)
-    scripts_to_run = [
-        {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Magyar")},
-        {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Manual")},
-        {"script": "main.py", "cwd": os.path.join(base_dir, "ATS scrapers", "Run")},
-    ]
-
-    start_time = time.time()
-    for item in scripts_to_run:
-        script_path = item["script"]
-        cwd = item["cwd"]
+    while True:
+        # 🧹 Clear PostgreSQL and local SQLite caches before starting so jobs aren't continuously duplicated
+        try:
+            from postgres_export import clear_postgres_table
+            print("\n" + "="*50)
+            print("🧹 PRE-FLIGHT: Wiping databases for a fresh run...")
+            print("="*50)
+            clear_postgres_table()
+            clear_local_databases(base_dir)
+            print("✅ Databases cleared!\n")
+        except ImportError:
+            print("⚠️ postgres_export module not found. Skipping database clearing.")
+            clear_local_databases(base_dir)
         
-        # Check if the directory and script exist before running
-        full_script_path = os.path.join(cwd, script_path)
-        if not os.path.exists(full_script_path):
-            print(f"Error: Script not found at {full_script_path}")
-            continue
-            
-        run_script(script_path, cwd)
+        # 💿 Auto disk cleanup — clears Chromium tmp, journal logs, old snap revisions
+        try:
+            import cleanup_disk
+            cleanup_disk.main()
+        except Exception as e:
+            print(f"⚠️ Disk cleanup skipped: {e}")
+        
+        # Define the scripts to run and their desired working directories (fastest first)
+        scripts_to_run = [
+            {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Magyar")},
+            {"script": "master_runner.py", "cwd": os.path.join(base_dir, "Manual")},
+            {"script": "main.py", "cwd": os.path.join(base_dir, "ATS scrapers", "Run")},
+        ]
 
-    total_time = time.time() - start_time
-    print(f"All structured scrapers have completed executing. (Took {total_time:.1f}s)")
-    send_notification(total_time)
+        start_time = time.time()
+        for item in scripts_to_run:
+            script_path = item["script"]
+            cwd = item["cwd"]
+            
+            # Check if the directory and script exist before running
+            full_script_path = os.path.join(cwd, script_path)
+            if not os.path.exists(full_script_path):
+                print(f"Error: Script not found at {full_script_path}")
+                continue
+                
+            run_script(script_path, cwd)
+
+        total_time = time.time() - start_time
+        print(f"All structured scrapers have completed executing. (Took {total_time:.1f}s)")
+        send_notification(total_time)
+
+        # Run sync_jobs.py
+        print("\n" + "="*50)
+        print("🔄 Running sync_jobs.py...")
+        print("="*50)
+        run_script("sync_jobs.py", base_dir)
+
+        print("\n" + "="*50)
+        print("🔁 Restarting scraper pipeline...")
+        print("="*50)
+        time.sleep(5) # short delay before restarting
 
 if __name__ == "__main__":
     main()
