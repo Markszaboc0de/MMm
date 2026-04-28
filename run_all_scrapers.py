@@ -114,8 +114,13 @@ def main():
             print("="*50)
             run_script("sync_jobs.py", base_dir)
 
-        except Exception as main_e:
-            print(f"❌ critical error in main loop: {main_e}")
+        except BaseException as main_e:
+            import traceback
+            error_msg = f"❌ critical error in main loop: {main_e}\n{traceback.format_exc()}"
+            print(error_msg)
+            with open(os.path.join(base_dir, "scraper_debug.log"), "a") as f:
+                f.write(error_msg + "\n")
+            # We don't break here to let it retry, but just in case it breaks later
 
         print("\n" + "="*50)
         print("🔁 Restarting scraper pipeline...")
@@ -123,4 +128,14 @@ def main():
         time.sleep(5) # short delay before restarting
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BaseException as e:
+        import traceback
+        import os
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        debug_file = os.path.join(base_dir, "scraper_fatal_debug.log")
+        with open(debug_file, "a") as f:
+            f.write(f"FATAL EXIT: {e}\n{traceback.format_exc()}\n")
+        print(f"FATAL EXIT LOGGED TO {debug_file}")
+        raise
