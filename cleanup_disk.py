@@ -26,7 +26,11 @@ def run(cmd, check=False):
     return result.returncode == 0
 
 def cleanup_chromium_tmp():
-    """Delete Chromium snap temp cache — often grows to 9GB+."""
+    """Kill zombie chromium processes and delete Chromium snap temp cache."""
+    print("  Aggressively killing any lingering Chrome/Chromium zombie processes...", flush=True)
+    run("pkill -f chrome")
+    run("pkill -f chromium")
+    
     path = "/tmp/snap-private-tmp/snap.chromium/tmp"
     if os.path.exists(path):
         try:
