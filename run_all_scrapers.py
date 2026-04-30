@@ -2,6 +2,22 @@ import os
 import subprocess
 import sys
 import time
+import signal
+import traceback
+
+def log_fatal_signal(signum, frame):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    debug_file = os.path.join(base_dir, "scraper_fatal_debug.log")
+    with open(debug_file, "a") as f:
+        f.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] FATAL EXIT - KILLED BY OS SIGNAL: {signum}\n")
+    sys.exit(1)
+
+try:
+    signal.signal(signal.SIGTERM, log_fatal_signal)
+    signal.signal(signal.SIGINT, log_fatal_signal)
+    signal.signal(signal.SIGHUP, log_fatal_signal) # catches SSH disconnects
+except Exception:
+    pass
 
 def run_script(script_path, cwd):
     print(f"--- Running {script_path} in {cwd} ---")
