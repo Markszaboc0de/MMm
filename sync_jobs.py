@@ -80,25 +80,30 @@ def sync_databases():
         ''')
         dest_conn.commit()
 
-        # 4. Read all data from source
-        print("📥 Reading data from source database...")
+        # 4. Read all data from source in chunks to avoid Out-Of-Memory (OOM) kills
+        print("📥 Reading data from source database in chunks...")
         src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
-        rows = src_cursor.fetchall()
         
-        if not rows:
+        seen_urls = set()
+        deduped_rows = []
+        total_fetched = 0
+        
+        while True:
+            chunk = src_cursor.fetchmany(10000)
+            if not chunk:
+                break
+            total_fetched += len(chunk)
+            for r in chunk:
+                url = r[5]
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    deduped_rows.append(r)
+        
+        if total_fetched == 0:
             print("⚠️ No data found in source database.")
             return
 
-        # Deduplicate rows by URL before pushing
-        seen_urls = set()
-        deduped_rows = []
-        for r in rows:
-            url = r[5]
-            if url and url not in seen_urls:
-                seen_urls.add(url)
-                deduped_rows.append(r)
-
-        print(f"📤 Preparing to sync {len(deduped_rows)} unique rows to destination database...")
+        print(f"📤 Preparing to sync {len(deduped_rows)} unique rows (from {total_fetched} total) to destination database...")
 
         # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
         dest_cursor.execute('''

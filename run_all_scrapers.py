@@ -15,7 +15,9 @@ def log_fatal_signal(signum, frame):
 try:
     signal.signal(signal.SIGTERM, log_fatal_signal)
     signal.signal(signal.SIGINT, log_fatal_signal)
-    signal.signal(signal.SIGHUP, log_fatal_signal) # catches SSH disconnects
+    # CRITICAL FIX: Tell the python script to completely IGNORE SSH disconnects.
+    # By default, overriding this like we did before causes nohup to fail.
+    signal.signal(signal.SIGHUP, signal.SIG_IGN) 
 except Exception:
     pass
 
@@ -130,7 +132,7 @@ def main():
             print("="*50)
             run_script("sync_jobs.py", base_dir)
 
-        except BaseException as main_e:
+        except Exception as main_e:
             import traceback
             error_msg = f"❌ critical error in main loop: {main_e}\n{traceback.format_exc()}"
             print(error_msg)
@@ -146,7 +148,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except BaseException as e:
+    except Exception as e:
         import traceback
         import os
         base_dir = os.path.dirname(os.path.abspath(__file__))
