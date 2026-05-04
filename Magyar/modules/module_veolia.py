@@ -7,7 +7,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Veolia"
@@ -15,7 +14,7 @@ BASE_LIST_URL = "https://karrier.veolia.hu/allasok/"
 BASE_DOMAIN = "https://karrier.veolia.hu"
 
 # Mentés a Magyar mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "veolia_jobs.db")
 
 
@@ -55,9 +54,8 @@ def run_scraper():
         print("📂 Álláslista letöltése (Maximum 10 oldal)...")
 
         for page in range(1, 11):
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {page}. oldal lekérése... (Eddig begyűjtve: {len(job_links)})")
-            sys.stdout.flush()
 
             url = f"{BASE_LIST_URL}{page}"
 
@@ -113,14 +111,12 @@ def run_scraper():
                 cursor = conn.cursor()
                 cursor.execute("SELECT id FROM jobs WHERE url = ?", (job_url,))
                 if cursor.fetchone():
-                    sys.stdout.write(
+                    str(
                         f"\r   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
-                    sys.stdout.flush()
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Feldolgozás folyamatban...")
-                sys.stdout.flush()
 
                 res = requests.get(job_url, headers=headers, timeout=10)
                 job_soup = BeautifulSoup(res.text, 'html.parser')

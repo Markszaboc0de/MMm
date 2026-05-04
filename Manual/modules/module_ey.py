@@ -17,7 +17,6 @@ import re
 import datetime
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "EY"
@@ -219,9 +218,8 @@ def run_scraper():
                         reached_old_jobs = True
                         break
 
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Scrolling... Collected {len(job_links)} recent jobs so far.")
-            sys.stdout.flush()
 
         print(
             f"\n✅ Successfully harvested {len(job_links)} jobs posted in the last 2 months. Rebooting browser for deep extraction...")

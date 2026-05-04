@@ -15,7 +15,6 @@ import sys
 import time
 import re
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "GE Aerospace"

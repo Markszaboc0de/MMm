@@ -13,14 +13,13 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Porsche Hungaria"
 BASE_SEARCH_URL = "https://karrier.porschehungaria.hu/DataCenter/Registration/JobAdvertisements/allasok"
 
 # Mentés a Magyar mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "porsche_jobs.db")
 
 
@@ -119,14 +118,12 @@ def run_scraper():
                 cursor.execute(
                     "SELECT id FROM jobs WHERE url = ?", (job['url'],))
                 if cursor.fetchone():
-                    sys.stdout.write(
+                    str(
                         f"\r   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
-                    sys.stdout.flush()
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 driver.get(job['url'])
 

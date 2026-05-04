@@ -16,7 +16,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "E.ON"
@@ -125,9 +124,8 @@ def run_scraper():
 
             if clicked:
                 click_count += 1
-                sys.stdout.write(
+                str(
                     f"\r   🔄 'Load More' kattintva {click_count} alkalommal... (Látható állások: ~{current_jobs})")
-                sys.stdout.flush()
 
                 # Várjuk meg, amíg a kártyák száma megnő
                 for _ in range(15):

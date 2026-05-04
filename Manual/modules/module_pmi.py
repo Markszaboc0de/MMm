@@ -12,12 +12,11 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Philip Morris International"
 BASE_URL = "https://join.pmicareers.com/earlycareers/gb/en/search-results"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "pmi_jobs.db")
 
 # Complete list of EU countries to filter by
@@ -148,9 +147,8 @@ def run_scraper():
                     break
 
                 clicks += 1
-                sys.stdout.write(
+                str(
                     f"\r   🔄 Clicked 'Next Page' {clicks} times... (Collected {len(job_links)} jobs so far)")
-                sys.stdout.flush()
 
                 driver.execute_script("arguments[0].click();", next_btn)
                 time.sleep(4)  # Wait for AJAX to swap the jobs

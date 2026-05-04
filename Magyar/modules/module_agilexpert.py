@@ -5,7 +5,6 @@ import os
 import sys
 
 # Force UTF-8 encoding for Windows terminals
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ CONFIGURATION

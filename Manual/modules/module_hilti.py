@@ -13,7 +13,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Hilti"
@@ -21,7 +20,7 @@ COMPANY_NAME = "Hilti"
 BASE_SEARCH_URL = "https://careers.hilti.group/en-us/jobs/?search=&country=20000072&country=20000084&country=20000934&country=20000144&country=20000171&country=20000177&country=20000197&country=20001093&country=20000567&country=20000290&country=20000414&country=20000231&country=20000212&country=20000302&country=20000441&country=20000493&country=20000511&country=20000466&country=20001108&experience=20000034&experience=20000035&experience=20000036&pagesize=20&page="
 
 # Mentés a Manual mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "hilti_jobs.db")
 
 
@@ -64,9 +63,8 @@ def run_scraper():
         page = 1
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {page}. oldal lekérése... (Eddig begyűjtve: {len(job_links)})")
-            sys.stdout.flush()
 
             url = f"{BASE_SEARCH_URL}{page}"
             driver.get(url)
@@ -135,9 +133,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 # Tényleges oldal megnyitása a Seleniummal
                 driver.get(job['url'])

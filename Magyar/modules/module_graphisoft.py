@@ -13,12 +13,11 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Graphisoft"
 BASE_URL = "https://careers.graphisoft.com/"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "graphisoft_jobs.db")
 
 # Kibővített országkód térkép az átnevezéshez (HU -> Hungary)
@@ -131,9 +130,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 # Tényleges URL megnyitása a Seleniummal
                 driver.get(job['url'])

@@ -13,12 +13,11 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Roche"
 BASE_URL = "https://careers.roche.com/global/en/search-results"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "roche_jobs.db")
 
 # EU Országok listája
@@ -80,9 +79,8 @@ def run_scraper():
         limit = 100
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 API lekérdezés: {offset} - {offset + limit}. találatok...")
-            sys.stdout.flush()
 
             # Hajszálpontos payload a cURL logod alapján, KIZÁRÓLAG az Entry Level szűrővel
             api_response = driver.execute_async_script("""
@@ -200,9 +198,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}... | Hely: {job['city']}, {job['country']}")
-                sys.stdout.flush()
 
                 # Tényleges oldal betöltése
                 driver.get(job['url'])

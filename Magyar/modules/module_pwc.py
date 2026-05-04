@@ -17,7 +17,6 @@ import time
 from urllib.parse import urljoin
 
 # Windows terminál UTF-8 kódolásának kikényszerítése
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ CONFIGURATION
@@ -214,9 +213,8 @@ def run_scraper():
                     new_jobs_added += 1
 
                 # Egy kis progress bar jellegű visszajelzés
-                sys.stdout.write(
+                str(
                     f"      [{index}/{len(all_job_targets)}] Feldolgozva...\r")
-                sys.stdout.flush()
 
             except Exception as e:
                 print(

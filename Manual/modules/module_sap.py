@@ -7,7 +7,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "SAP"
@@ -88,9 +87,8 @@ def run_scraper():
                     # Ha nincs több sor, végeztünk ezzel a státusszal
                     break
 
-                sys.stdout.write(
+                str(
                     f"\r   🔄 {status} lekérdezés: {offset} - {offset + 25}. találatok...")
-                sys.stdout.flush()
 
                 for row in job_rows:
                     title_elem = row.select_one('.jobTitle-link')
@@ -161,9 +159,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Állás lekérése: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 # HTML lekérése a háttérben
                 res = requests.get(job['url'], headers=headers, timeout=10)

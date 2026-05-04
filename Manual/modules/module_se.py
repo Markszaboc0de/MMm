@@ -6,7 +6,6 @@ import time
 import re
 import html
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Schneider Electric"

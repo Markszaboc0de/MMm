@@ -7,7 +7,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "AGCO"
@@ -18,7 +17,7 @@ QUERY_PARAMS = "?q=&sortColumn=referencedate&sortDirection=desc"
 BASE_DOMAIN = "https://careers.agcocorp.com"
 
 # Mentés a Manual mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "agco_jobs.db")
 
 # Országkód feloldó szótár az SAP RMK rendszerekhez
@@ -77,9 +76,8 @@ def run_scraper():
         offset = 0
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {offset} - {offset + 25}. találatok vizsgálata... (Eddig begyűjtve: {len(job_links)})")
-            sys.stdout.flush()
 
             # 💡 A MÁGIA: Az SAP RMK megfelelő URL felépítése
             if offset == 0:
@@ -187,14 +185,12 @@ def run_scraper():
                 cursor.execute(
                     "SELECT id FROM jobs WHERE url = ?", (job['url'],))
                 if cursor.fetchone():
-                    sys.stdout.write(
+                    str(
                         f"\r   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
-                    sys.stdout.flush()
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 res = requests.get(job['url'], headers=headers, timeout=10)
                 job_soup = BeautifulSoup(res.text, 'html.parser')

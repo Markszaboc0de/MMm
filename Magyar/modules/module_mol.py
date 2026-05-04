@@ -16,7 +16,6 @@ import time
 import re
 from urllib.parse import urljoin
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 COMPANY_NAME = "MOL_Group"
 BASE_URL = "https://molgroup.taleo.net/careersection/external/jobsearch.ftl?"

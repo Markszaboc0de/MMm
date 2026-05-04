@@ -12,12 +12,11 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "EPAM"
 BASE_URL = "https://careers.epam.com/en/jobs?seniority=junior"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "epam_jobs.db")
 
 
@@ -120,9 +119,8 @@ def run_scraper():
                     break
 
                 clicks += 1
-                sys.stdout.write(
+                str(
                     f"\r   🔄 Clicked 'Next Page' {clicks} times... (Found {len(job_links)} jobs so far)")
-                sys.stdout.flush()
 
                 driver.execute_script(
                     "arguments[0].scrollIntoView({block: 'center'});", next_btn)

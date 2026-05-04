@@ -17,7 +17,6 @@ import re
 import json
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Erste Group"
@@ -105,9 +104,8 @@ def run_scraper():
 
             if clicked:
                 click_count += 1
-                sys.stdout.write(
+                str(
                     f"\r   🔄 Clicked 'Load More' {click_count} times...")
-                sys.stdout.flush()
                 time.sleep(3)
             else:
                 print("\n🏁 List is fully expanded.")

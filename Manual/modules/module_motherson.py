@@ -17,7 +17,6 @@ import re
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Motherson"

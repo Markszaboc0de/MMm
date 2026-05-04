@@ -15,7 +15,6 @@ import re
 from urllib.parse import urljoin
 
 # UTF-8 kódolás kényszerítése
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "BAT_Hungary"

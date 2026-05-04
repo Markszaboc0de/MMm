@@ -12,7 +12,6 @@ import sys
 import time
 
 # Windows terminál UTF-8 kódolásának kikényszerítése
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ CONFIGURATION
@@ -117,9 +116,8 @@ def run_scraper():
                 break  # Nincs több gomb!
 
             click_count += 1
-            sys.stdout.write(
+            str(
                 f"      🖱️ Gomb lenyomva ({click_count}. alkalommal). Várakozás az új kártyákra...\r")
-            sys.stdout.flush()
 
             # 🧠 THE FIX: Dinamikus várakozás az új kártyákra (akár 15 másodpercet is adunk a szervernek)
             new_cards_loaded = False

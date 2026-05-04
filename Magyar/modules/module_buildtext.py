@@ -6,7 +6,6 @@ import sys
 import time
 
 # Windows terminál UTF-8 kódolásának kikényszerítése
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ CONFIGURATION
