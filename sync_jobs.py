@@ -77,85 +77,91 @@ def sync_databases():
                 raw_text TEXT,
                 url TEXT
             );
-        ''')
-        dest_conn.commit()
-
-        # 4. Read all data from source in chunks to avoid Out-Of-Memory (OOM) kills
-        print("📥 Reading data from source database in chunks...")
-        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
-        
-        seen_urls = set()
-        deduped_rows = []
-        total_fetched = 0
-        
-        while True:
-            chunk = src_cursor.fetchmany(10000)
-            if not chunk:
-                break
-            total_fetched += len(chunk)
-            for r in chunk:
-                url = r[5]
-                if url and url not in seen_urls:
-                    seen_urls.add(url)
-                    deduped_rows.append(r)
-        
-        if total_fetched == 0:
-            print("⚠️ No data found in source database.")
-            return
-
-        print(f"📤 Preparing to sync {len(deduped_rows)} unique rows (from {total_fetched} total) to destination database...")
-
-        # 5. Upsert into destination using a temporary table (avoids ON CONFLICT constraint error)
-        dest_cursor.execute('''
-            CREATE TEMP TABLE temp_sync (
-                company TEXT,
-                title TEXT,
-                city TEXT,
-                country TEXT,
-                raw_text TEXT,
-                url TEXT
-            ) ON COMMIT DROP;
-        ''')
-        dest_cursor.execute('CREATE INDEX idx_temp_sync_url ON temp_sync(url);')
-
         # Ensure destination lookup is indexed to avoid combinatorial table scans!
         dest_cursor.execute(f'''
             CREATE INDEX IF NOT EXISTS idx_{DEST_TABLE}_url ON {DEST_TABLE}(url);
         ''')
 
-        execute_values(
-            dest_cursor,
-            '''INSERT INTO temp_sync (company, title, city, country, raw_text, url) 
-               VALUES %s''',
-            deduped_rows,
-            page_size=10000
-        )
-
-        # Update existing records
-        dest_cursor.execute(f'''
-            UPDATE {DEST_TABLE} j
-            SET company = t.company,
-                title = t.title,
-                city = t.city,
-                country = t.country,
-                raw_text = t.raw_text
-            FROM temp_sync t
-            WHERE j.url = t.url;
-        ''')
-
-        # Insert new records
-        dest_cursor.execute(f'''
-            INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url)
-            SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url
-            FROM temp_sync t
-            WHERE NOT EXISTS (
-                SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
-            );
-        ''')
+        # 4. Read all data from source using a SERVER-SIDE cursor to prevent RAM bloat
+        print("📥 Reading and streaming data from source database in chunks...")
+        src_cursor = src_conn.cursor(name='fetch_cursor')
+        src_cursor.itersize = 5000
+        src_cursor.execute(f'SELECT "Company", "Job Title", "City", "Country", "Job Description", "URL" FROM {SRC_TABLE}')
         
-        dest_conn.commit()
+        seen_urls = set()
+        total_fetched = 0
+        total_upserted = 0
+        
+        while True:
+            chunk = src_cursor.fetchmany(5000)
+            if not chunk:
+                break
+            
+            total_fetched += len(chunk)
+            deduped_rows = []
+            
+            for r in chunk:
+                url = r[5]
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    deduped_rows.append(r)
+            
+            if deduped_rows:
+                # 5. Upsert this specific chunk into destination using a temporary table
+                dest_cursor.execute('''
+                    CREATE TEMP TABLE temp_sync (
+                        company TEXT,
+                        title TEXT,
+                        city TEXT,
+                        country TEXT,
+                        raw_text TEXT,
+                        url TEXT
+                    ) ON COMMIT DROP;
+                ''')
+                
+                execute_values(
+                    dest_cursor,
+                    '''INSERT INTO temp_sync (company, title, city, country, raw_text, url) 
+                       VALUES %s''',
+                    deduped_rows,
+                    page_size=5000
+                )
 
-        print(f"✅ Successfully synchronized {len(rows)} jobs to {DEST_DB} ({DEST_TABLE} table) at {DEST_HOST}!")
+                # Update existing records
+                dest_cursor.execute(f'''
+                    UPDATE {DEST_TABLE} j
+                    SET company = t.company,
+                        title = t.title,
+                        city = t.city,
+                        country = t.country,
+                        raw_text = t.raw_text
+                    FROM temp_sync t
+                    WHERE j.url = t.url;
+                ''')
+
+                # Insert new records
+                dest_cursor.execute(f'''
+                    INSERT INTO {DEST_TABLE} (company, title, city, country, raw_text, url)
+                    SELECT t.company, t.title, t.city, t.country, t.raw_text, t.url
+                    FROM temp_sync t
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM {DEST_TABLE} j WHERE j.url = t.url
+                    );
+                ''')
+                
+                dest_cursor.execute("DROP TABLE temp_sync;")
+                dest_conn.commit()
+                total_upserted += len(deduped_rows)
+                print(f"   -> Chunk processed: Upserted {len(deduped_rows)} unique rows (Total processed so far: {total_fetched})")
+
+        src_cursor.close()
+        
+        if total_fetched == 0:
+            print("⚠️ No data found in source database.")
+            return
+
+        print(f"✅ Successfully synchronized {total_upserted} unique jobs out of {total_fetched} total scanned jobs to {DEST_DB} at {DEST_HOST}!")
+
 
     except Exception as e:
         print(f"❌ Error during synchronization: {e}")

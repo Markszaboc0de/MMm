@@ -90,10 +90,9 @@ def run_scraper(scraper_name, scraper_path):
                 break
             time.sleep(1)
             
-        # 🧹 METICULOUS CLEANUP: Always nuke the process group regardless of how it exited.
+        # 🧹 METICULOUS CLEANUP: Kill the python zombie. We rely on pkill in cleanup_disk to handle orphan Chrome browsers.
         try:
-            import signal
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            proc.kill()
         except Exception:
             pass
             
