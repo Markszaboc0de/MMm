@@ -13,14 +13,13 @@ import re
 import urllib.parse
 
 # Force UTF-8 encoding for Windows terminals
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ CONFIGURATION
 # ==========================================
 COMPANY_NAME = "McKinsey & Company"
 BASE_URL = "https://www.mckinsey.com/careers/search-jobs"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "mckinsey_jobs.db")
 
 # The target keywords for filtering

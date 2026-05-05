@@ -7,12 +7,11 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "aiMotive"
 BASE_URL = "https://aimotive.com/career"
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "aimotive_jobs.db")
 
 
@@ -100,9 +99,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Állás lekérése: {job['url']} ...")
-                sys.stdout.flush()
 
                 # HTML lekérése a háttérben
                 res = requests.get(job['url'], headers=headers, timeout=10)

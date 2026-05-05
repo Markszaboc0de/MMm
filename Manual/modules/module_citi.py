@@ -16,7 +16,6 @@ import time
 import re
 from urllib.parse import urljoin
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Citi"

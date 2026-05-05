@@ -13,14 +13,13 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "OBI"
 BASE_SEARCH_URL = "https://karrier.obi.hu/gyakornoki-poziciok?utm_source=talents-connect&utm_medium=organic&utm_campaign=talents-connect#23064ec9-19f8-404a-902b-775566837dda"
 
 # Mentés a Magyar mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "obi_jobs.db")
 
 
@@ -81,9 +80,8 @@ def run_scraper():
 
         page_num = 1
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 {page_num}. oldal feldolgozása... (Eddig begyűjtve: {len(job_links)})")
-            sys.stdout.flush()
 
             # Adatok kinyerése az aktuális oldalról JS-sel
             jobs_on_page = driver.execute_script("""
@@ -159,14 +157,12 @@ def run_scraper():
                 cursor.execute(
                     "SELECT id FROM jobs WHERE url = ?", (job['url'],))
                 if cursor.fetchone():
-                    sys.stdout.write(
+                    str(
                         f"\r   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
-                    sys.stdout.flush()
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 # Visszaváltunk a fő dokumentumra a biztonság kedvéért, mielőtt új URL-t nyitunk
                 driver.switch_to.default_content()

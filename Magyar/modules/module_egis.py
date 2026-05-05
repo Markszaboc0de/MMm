@@ -7,7 +7,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Servier (Egis)"
@@ -15,7 +14,7 @@ COMPANY_NAME = "Servier (Egis)"
 BASE_SEARCH_URL = "https://jobs.servier.com/search/?q=&sortColumn=referencedate&sortDirection=desc&startrow="
 
 # Mentés a Manual mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "servier_jobs.db")
 
 # Entry-level kulcsszavak a memóriaszűréshez
@@ -61,9 +60,8 @@ def run_scraper():
         consecutive_empty_pages = 0
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {offset} - {offset + 25}. találatok feldolgozása... (Eddig talált magyar gyakornoki: {len(job_links)})")
-            sys.stdout.flush()
 
             url = f"{BASE_SEARCH_URL}{offset}"
 
@@ -171,9 +169,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 res = requests.get(job['url'], headers=headers, timeout=10)
                 job_soup = BeautifulSoup(res.text, 'html.parser')

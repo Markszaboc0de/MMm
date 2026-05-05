@@ -15,7 +15,6 @@ import re
 import os
 import sys
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURATION ---
 COMPANY_NAME = "Morgan Stanley"

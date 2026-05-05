@@ -13,7 +13,6 @@ import sys
 import time
 import re
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Royal_Sped"

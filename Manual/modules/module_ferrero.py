@@ -7,14 +7,13 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "Ferrero"
 BASE_SEARCH_URL = "https://www.ferrerocareers.com/int/en/jobs?career_stage%5BInternship%5D=Internship&page="
 
 # Mentés a Manual mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "ferrero_jobs.db")
 
 # Globális országkód térkép az átnevezéshez (EU és EU-n kívüli országok)
@@ -71,9 +70,8 @@ def run_scraper():
         page = 0
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {page + 1}. oldal lekérése... (Eddig begyűjtve: {len(job_links)})")
-            sys.stdout.flush()
 
             url = f"{BASE_SEARCH_URL}{page}"
 
@@ -128,14 +126,12 @@ def run_scraper():
                 cursor = conn.cursor()
                 cursor.execute("SELECT id FROM jobs WHERE url = ?", (job_url,))
                 if cursor.fetchone():
-                    sys.stdout.write(
+                    str(
                         f"\r   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
-                    sys.stdout.flush()
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Feldolgozás folyamatban...")
-                sys.stdout.flush()
 
                 res = requests.get(job_url, headers=headers, timeout=10)
                 job_soup = BeautifulSoup(res.text, 'html.parser')

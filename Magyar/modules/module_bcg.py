@@ -13,7 +13,6 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "BCG"
@@ -32,7 +31,7 @@ COUNTRY_PARAMS = "&".join(
 BASE_SEARCH_URL = f"https://careers.bcg.com/global/en/search-results?jobType=Internship&{COUNTRY_PARAMS}"
 
 # Mentés a Manual mappába!
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Manual\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "bcg_jobs.db")
 
 # Globális országkód/név térkép a tisztításhoz
@@ -87,9 +86,8 @@ def run_scraper():
         wait = WebDriverWait(driver, 10, poll_frequency=0.2)
 
         while True:
-            sys.stdout.write(
+            str(
                 f"\r   🔄 Lapozás: {offset} - {offset + 10}. találatok feldolgozása... (Eddig talált: {len(job_links)})")
-            sys.stdout.flush()
 
             # Hozzáadjuk a lapozást az előszűrt "Super-URL"-hez
             url = f"{BASE_SEARCH_URL}&from={offset}&s=1"
@@ -193,9 +191,8 @@ def run_scraper():
                         f"   [{idx}/{len(job_links)}] Ugrás (Már az adatbázisban van)")
                     continue
 
-                sys.stdout.write(
+                str(
                     f"\r   [{idx}/{len(job_links)}] Fetching: {job['title'][:30]}...")
-                sys.stdout.flush()
 
                 driver.get(job['url'])
 

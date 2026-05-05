@@ -15,7 +15,6 @@ import sys
 import time
 from urllib.parse import urljoin
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # ⚙️ KONFIGURÁCIÓ

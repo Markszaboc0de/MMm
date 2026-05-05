@@ -15,7 +15,6 @@ import re
 from urllib.parse import urljoin
 
 # UTF-8 kódolás kényszerítése a konzolhoz
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "BorsodChem"

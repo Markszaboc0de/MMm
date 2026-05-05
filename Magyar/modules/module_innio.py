@@ -12,13 +12,12 @@ import time
 import re
 from markdownify import markdownify as md
 
-sys.stdout.reconfigure(encoding='utf-8')
 
 # --- KONFIGURÁCIÓ ---
 COMPANY_NAME = "INNIO"
 # Az URL már tartalmazza az "Internship" (gyakornok) szűrőt
 BASE_URL = "https://jobs.jobvite.com/innio/search?r=&l=&c=&t=Internship&q="
-DATA_FOLDER = r"C:\Users\kgyoz\Documents\Projekt\Magyar\data"
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 DB_PATH = os.path.join(DATA_FOLDER, "innio_jobs.db")
 
 
